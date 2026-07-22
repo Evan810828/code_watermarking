@@ -1,0 +1,25 @@
+# Only data/ and src/ (plus root docs) are tracked.
+# Experiment outputs and logs stay local.
+/out/
+/logs/
+/archived_old_out/
+/CLAUDE.md
+
+# Large local data (LCB per-task tests, ~4GB; prepped via
+# `python -m dataloader.livecodebench` or relocated with $LCB_SCRATCH)
+/data/lcb
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Checkpoints / large artifacts
+*.pt
+*.ckpt
