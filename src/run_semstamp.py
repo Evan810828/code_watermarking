@@ -13,7 +13,7 @@ Implementations (both default to the line segmenter; --segmenter nltk gives
 the original sentence segmentation):
     pilot     wm/semstamp re-implementation (MarkLLM algorithm; batched
               candidate trials).
-    official  authors' bohanhou14/SemStamp code via wm/official/semstamp
+    official  authors' bohanhou14/SemStamp code via wm/MarkLLM_official/semstamp
               (documented shims incl. the line-mode criteria, see that module).
 
 Usage (single GPU):
@@ -132,7 +132,7 @@ def main():
     def build_official(model, tokenizer):
         from transformers import GenerationConfig
 
-        from wm.official.semstamp import OfficialSemStamp
+        from wm.MarkLLM_official.semstamp import OfficialSemStamp
 
         gen_config = None
         if model is not None:

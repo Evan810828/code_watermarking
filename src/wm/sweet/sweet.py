@@ -27,7 +27,7 @@ Port deltas (documented, none change the algorithm):
     an efficiency-only change with identical output).
   - the detection dict carries this repo's unified keys (z_score /
     is_watermarked) alongside the upstream ones (prediction, confidence),
-    like wm/official/kgw.
+    like wm/MarkLLM_official/kgw.
   - upstream's z=-100 "no scored tokens" sentinel is kept, with
     num_tokens_scored=0 marking the case.
 """

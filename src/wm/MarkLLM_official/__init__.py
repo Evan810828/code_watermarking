@@ -2,7 +2,7 @@
 clones are expected next to the pilot_study checkout
 (<parent>/lm-watermarking and <parent>/SemStamp); override the locations with
 the LM_WATERMARKING_DIR / SEMSTAMP_DIR environment variables.
-Import wm.official.kgw / wm.official.semstamp; they call add_repo_paths()
+Import wm.MarkLLM_official.kgw / wm.MarkLLM_official.semstamp; they call add_repo_paths()
 themselves."""
 
 import os

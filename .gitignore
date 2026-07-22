@@ -1,9 +1,10 @@
 # Only data/ and src/ (plus root docs) are tracked.
-# Experiment outputs and logs stay local.
+# Experiment outputs, logs, and cluster-specific launch scripts stay local.
 /out/
 /logs/
 /archived_old_out/
 /CLAUDE.md
+/src/scripts/
 
 # Large local data (LCB per-task tests, ~4GB; prepped via
 # `python -m dataloader.livecodebench` or relocated with $LCB_SCRATCH)

@@ -4,37 +4,29 @@ Pilot study of LLM watermarking methods — **KGW**, **SemStamp**, **SWEET**,
 and **CodeWM** (Guo & Cheng, NeurIPS 2025) — on code generation benchmarks
 (**HumanEval**, **MBPP**, **LiveCodeBench**) with Qwen3.5-4B.
 
-## Layout
+## Methods & Datasets
 
-```
-data/                     slim benchmark task lists (tracked)
-src/
-  run_kgw.py              KGW inference        (--impl pilot | official)
-  run_semstamp.py         SemStamp inference   (--impl pilot | official)
-  run_sweet.py            SWEET inference
-  run_codewm.py           CodeWM inference (needs a trained checkpoint)
-  train_codewm.py         CodeWM CodeModel training pipeline
-  eval_pass1.py           pass@1 evaluation of any inference output
-  similarity_study.py     semantic-diversity study
-  utils.py                shared helpers + merge/summary CLI
-  dataloader/             one module per benchmark (fixed interface)
-  wm/                     watermark implementations
-    kgw/  semstamp/  sweet/  codewm/    self-contained re-implementations
-    official/             adapters around the authors' original repos
-    markllm/              MarkLLM-package + vLLM reproduction
-  scripts/                slurm shard-launch helpers
-out/                      experiment outputs (local, not tracked)
-```
+| Method | Paper | Venue | Official code | Implementation here |
+|---|---|---|---|---|
+| **KGW** | [A Watermark for Large Language Models](https://arxiv.org/abs/2301.10226) (Kirchenbauer et al.) | ICML 2023 | [jwkirchenbauer/lm-watermarking](https://github.com/jwkirchenbauer/lm-watermarking) | `run_kgw.py`; `wm/kgw/` (pilot) or `wm/MarkLLM_official/` (official) |
+| **SemStamp** | [SemStamp: A Semantic Watermark with Paraphrastic Robustness for Text Generation](https://arxiv.org/abs/2310.03991) (Hou et al.) | NAACL 2024 | [bohanhou14/SemStamp](https://github.com/bohanhou14/SemStamp) | `run_semstamp.py`; `wm/semstamp/` (pilot) or `wm/MarkLLM_official/` (official) |
+| **SWEET** | [Who Wrote this Code? Watermarking for Code Generation](https://arxiv.org/abs/2305.15060) (Lee et al.) | ACL 2024 | [hongcheki/sweet-watermark](https://github.com/hongcheki/sweet-watermark) | `run_sweet.py`; `wm/sweet/` (core-only port) |
+| **CodeWM** | [Practical and Effective Code Watermarking for Large Language Models](https://openreview.net/forum?id=RpE4HeuX69) (Guo & Cheng) | NeurIPS 2025 | [TimeLovercc/code-watermark](https://github.com/TimeLovercc/code-watermark) | `run_codewm.py` + `train_codewm.py`; `wm/codewm/` (core-only port) |
 
-Design rule: **no per-dataset scripts.** Every run is composed of a
-dataloader module (`src/dataloader/<dataset>.py`), a watermark implementation
-(`src/wm/`), and the dataset-agnostic runners. To add a benchmark, write one
-dataloader module and register it in `dataloader/__init__.py`.
+KGW and SemStamp are additionally reproduced through the
+[THU-BPM/MarkLLM](https://github.com/THU-BPM/MarkLLM) toolkit with vLLM
+inference (`src/wm/markllm/`).
+
+| Dataset | Tasks used | Paper | Source |
+|---|---|---|---|
+| **HumanEval** | 164 (full set) | [Evaluating Large Language Models Trained on Code](https://arxiv.org/abs/2107.03374) | [openai/human-eval](https://github.com/openai/human-eval) |
+| **MBPP** | 500 (test split) | [Program Synthesis with Large Language Models](https://arxiv.org/abs/2108.07732) | [google-research-datasets/mbpp](https://huggingface.co/datasets/google-research-datasets/mbpp) |
+| **LiveCodeBench** | 400 (release v1, code_generation test split) | [LiveCodeBench: Holistic and Contamination Free Evaluation of Large Language Models for Code](https://arxiv.org/abs/2403.07974) | [LiveCodeBench/LiveCodeBench](https://github.com/LiveCodeBench/LiveCodeBench) |
 
 ## Setup
 
 ```bash
-git clone git@github.com:Evan810828/code_watermarking.git
+git clone https://github.com/Evan810828/code_watermarking.git
 cd code_watermarking
 conda create -n watermark python=3.12 -y
 conda activate watermark
@@ -42,15 +34,13 @@ pip install -r requirements.txt
 python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab')"
 ```
 
-The self-contained implementations (`--impl pilot`, `run_sweet.py`,
-`run_codewm.py`) need nothing else. Models are pulled from the Hugging Face
-hub (default `--model Qwen/Qwen3.5-4B`).
+
 
 ### Optional: official / MarkLLM reproductions
 
-`--impl official` and `src/wm/markllm/` import from the authors' original
-repos. Clone whichever you need **next to this repo** (or point the
-environment variable at an existing clone):
+`--impl official` (via `src/wm/MarkLLM_official/`) and `src/wm/markllm/`
+import from the authors' original repos. Clone whichever you need **next to
+this repo** (or point the environment variable at an existing clone):
 
 | Needed for | Clone | Env var override |
 |---|---|---|
@@ -92,18 +82,16 @@ python run_kgw.py --dataset humaneval --impl pilot --limit 4 --batch-size 2
 # pass@1 (dataset inferred from the file's meta; executes generated code!)
 python eval_pass1.py --input ../out/kgw/humaneval/<file>.json --tag kgw
 
-# semantic-diversity study
-python similarity_study.py --datasets livecodebench
+# semantic-diversity study (any subset of datasets; default: humaneval mbpp)
+python similarity_study.py --datasets humaneval mbpp livecodebench
 
-# shard merging / summaries
+# shard merging / summaries (merge-semstamp: humaneval|mbpp; LCB has its own)
 python utils.py merge-semstamp --dataset humaneval --num-shards 4
+python utils.py merge-semstamp-lcb --num-shards 6 --impl official
 python utils.py summarize-lcb
 ```
 
-Long runs shard across GPUs with `--shard/--num-shards`;
-`scripts/launch_semstamp_shards.sh <JOBID> <NUM_GPUS>` launches shards inside
-an existing slurm allocation (set `$PYTHON` to your interpreter if not using
-the `watermark` conda env).
+
 
 CodeWM needs its trained CodeModel first
 (`python train_codewm.py gen|build|train`); artifacts default to
@@ -112,6 +100,10 @@ CodeWM needs its trained CodeModel first
 
 ## Conventions
 
+- **No per-dataset scripts.** Every run is composed of a dataloader module
+  (`src/dataloader/<dataset>.py`), a watermark implementation (`src/wm/`),
+  and the dataset-agnostic runners. To add a benchmark, write one dataloader
+  module and register it in `dataloader/__init__.py`.
 - Sampling defaults (temperature 0.7, top_p 0.8, top_k 20, seed 42,
   `enable_thinking=False`) come from `utils.add_common_args`.
 - `--max-new-tokens` defaults to each dataloader's `MAX_NEW_TOKENS`

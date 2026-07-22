@@ -60,7 +60,7 @@ def build_pilot(args, tokenizer, model, device):
 
 
 def build_official(args, tokenizer, model, device):
-    from wm.official.kgw import OfficialKGW
+    from wm.MarkLLM_official.kgw import OfficialKGW
 
     impl = OfficialKGW(
         tokenizer,
