@@ -5,6 +5,8 @@
 /archived_old_out/
 /CLAUDE.md
 /src/scripts/
+/docs/
+/diagnosis
 
 # Large local data (LCB per-task tests, ~4GB; prepped via
 # `python -m dataloader.livecodebench` or relocated with $LCB_SCRATCH)

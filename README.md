@@ -89,6 +89,15 @@ python similarity_study.py --datasets humaneval mbpp livecodebench
 python utils.py merge-semstamp --dataset humaneval --num-shards 4
 python utils.py merge-semstamp-lcb --num-shards 6 --impl official
 python utils.py summarize-lcb
+
+# cross-method results table on the unified evaluation protocol
+python utils.py summarize-methods [--method kgw|semstamp|sweet|codewm]
+
+# bring an existing run onto the current protocol WITHOUT regenerating:
+# re-detects the stored completions, writes <stem>.rescored.json, and takes
+# the watermark config from the file itself (pass@1 is untouched by design)
+python run_kgw.py    --dataset mbpp --impl pilot --rescore ../out/kgw/mbpp/kgw_mbpp_pilot_qwen3.5-4b.json
+python run_codewm.py --dataset mbpp --rescore ../out/codewm/mbpp/<run>.json
 ```
 
 

@@ -12,5 +12,17 @@ tqdm
 # Official SemStamp reproduction (wm/official/semstamp) additionally needs:
 NearPy>=1.0
 
+# Attack-robustness pilot (diagnosis/attacks/, Attack_Robustness_CodeWM branch).
+# Pinned: Black output is line-length/version-sensitive, so formatting attacks
+# (A1) must be reproducible across machines.
+black==26.5.1
+isort==8.0.1
+libcst==1.8.6
+autoflake==2.3.3
+python-minifier==3.2.0
+rope==1.14.0
+# (nltk already listed above; WordNet corpus fetched via nltk.download('wordnet'))
+
 # Optional — MarkLLM+vLLM reproduction (src/wm/markllm/) runs in a separate
 # environment with vllm==0.18 and transformers==4.57; see README.
+sentencepiece  # OpenCoder custom tokenizer (CodeWM repro)

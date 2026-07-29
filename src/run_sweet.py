@@ -35,6 +35,22 @@ import dataloader
 import utils
 
 
+def build_config(args, model):
+    """SweetConfig from CLI args + the model's vocab (one definition, so the
+    generate and rescore paths cannot drift apart)."""
+    from wm.sweet import SweetConfig
+
+    model_cfg = getattr(model.config, "text_config", model.config)
+    return SweetConfig(
+        vocab_size=model_cfg.vocab_size,
+        gamma=args.gamma,
+        delta=args.delta,
+        hash_key=args.hash_key,
+        entropy_threshold=args.entropy_threshold,
+        z_threshold=args.z_threshold,
+    )
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dataset", choices=dataloader.DATASETS, required=True)
@@ -47,10 +63,50 @@ def main():
     ap.add_argument("--entropy-threshold", type=float, default=0.5)
     ap.add_argument("--z-threshold", type=float, default=4.0)
     ap.add_argument("--hash-key", type=int, default=15485863)
+    ap.add_argument("--rescore", metavar="RESULT_JSON",
+                    help="re-detect an existing run's stored completions under "
+                    "the current protocol and write <stem>.rescored.json; no "
+                    "generation, and the watermark config is taken from the file")
     args = ap.parse_args()
 
     torch.manual_seed(args.seed)
     device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    if args.rescore:
+        # SWEET's detector recomputes per-token entropy from the model, so the
+        # LLM is required here — but generation still is not.
+        src = Path(args.rescore)
+        data = json.loads(src.read_text())
+        for line in utils.rescore_args_from_meta(
+            args, data["meta"], ("gamma", "delta", "hash_key", "entropy_threshold",
+                                 "z_threshold", "prefix_length")):
+            print(f"  config from file -> {line}")
+        model_name = data["meta"].get("model", args.model)
+        print(f"Loading {model_name} ...")
+        tokenizer, model = utils.load_hf_model(
+            model_name, device, trust_remote_code=args.trust_remote_code)
+        from wm.sweet import SweetDetector
+
+        detector = SweetDetector(build_config(args, model), model)
+
+        @torch.no_grad()
+        def detect_program(text, prompt=None):
+            if not text or not text.strip():
+                return None
+            ids = tokenizer(text, add_special_tokens=False, return_tensors="pt").input_ids[0]
+            if ids.shape[0] < 2:
+                return None
+            return detector.detect(ids.to(device), 0)
+
+        results = utils.rescore_results(data["results"], detect_program)
+        meta = utils.rescore_meta(data["meta"], src, results)
+        dst = utils.rescore_path(src)
+        dst.write_text(json.dumps({"meta": meta, "results": results}, indent=2))
+        s = meta["summary"]
+        print(f"Rescored {len(results)} records -> {dst}")
+        print(f"  AUROC={s['auroc']} TPR@1%={utils.fmt_pct(s['tpr@1pct'])} "
+              f"TPR@5%={utils.fmt_pct(s['tpr@5pct'])}")
+        return
 
     ds = dataloader.get(args.dataset)
     tasks = ds.load_tasks(limit=args.limit)
@@ -66,9 +122,11 @@ def main():
     out_path.parent.mkdir(exist_ok=True, parents=True)
 
     results = []
+    prior_meta = {}
     if out_path.exists():
         with open(out_path) as f:
-            results = json.load(f)["results"]
+            prior = json.load(f)
+        results, prior_meta = prior["results"], prior.get("meta", {})
         done = {r["task_id"] for r in results}
         tasks = [t for t in tasks if ds.task_id(t) not in done]
         print(f"Resuming: {len(results)} done, {len(tasks)} remaining")
@@ -76,17 +134,9 @@ def main():
     print(f"Loading {args.model} ...")
     tokenizer, model = utils.load_hf_model(args.model, device, padding_side="left")
 
-    from wm.sweet import SweetConfig, SweetDetector, SweetLogitsProcessor
+    config = build_config(args, model)
+    from wm.sweet import SweetDetector, SweetLogitsProcessor
 
-    model_cfg = getattr(model.config, "text_config", model.config)
-    config = SweetConfig(
-        vocab_size=model_cfg.vocab_size,
-        gamma=args.gamma,
-        delta=args.delta,
-        hash_key=args.hash_key,
-        entropy_threshold=args.entropy_threshold,
-        z_threshold=args.z_threshold,
-    )
     wm_processor = LogitsProcessorList([SweetLogitsProcessor(config)])
     detector = SweetDetector(config, model)
 
@@ -109,9 +159,12 @@ def main():
             **config.to_dict(),
         },
         "generation": {k: v for k, v in gen_kwargs.items() if k != "pad_token_id"},
+        "system_prompt": dataloader.system_prompt(ds),
+        "detection_scope": utils.DETECTION_SCOPE,
         "seed": args.seed,
-        "started_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "started_at": prior_meta.get("started_at", time.strftime("%Y-%m-%d %H:%M:%S")),
     }
+    utils.assert_resumable(prior_meta, meta, out_path)
 
     def generate_batch(chat_texts: list[str], watermark: bool):
         enc = tokenizer(chat_texts, return_tensors="pt", padding=True).to(device)
@@ -130,20 +183,28 @@ def main():
             if len(eos_pos) > 0:
                 gen_ids = gen_ids[: eos_pos[0] + 1]
             completion = tokenizer.decode(gen_ids, skip_special_tokens=True)
-            # detection context: the sample's REAL prompt tokens (drop left
-            # pads via the attention mask) so recomputed entropies match the
-            # distributions seen at generation time
-            real_prompt = enc.input_ids[b][enc.attention_mask[b].bool()]
-            full_ids = torch.cat([real_prompt.to(device), gen_ids.to(device)])
             outs.append(
-                {
-                    "completion": completion,
-                    "extracted_code": utils.extract_code(completion),
-                    "num_gen_tokens": int(gen_ids.shape[0]),
-                    "detection": detector.detect(full_ids, int(real_prompt.shape[0])),
-                }
+                utils.branch_record(completion, int(gen_ids.shape[0]), detect_program)
             )
         return outs
+
+    @torch.no_grad()
+    def detect_program(text, prompt=None):
+        """Unified protocol: score the extracted program standalone.
+
+        SWEET recomputes per-token entropy from the model, and hashes each
+        position on its predecessor, so scoring starts at index 1 (the detector
+        clamps prefix_len to >=1 itself). Entropies here come from the program
+        read on its own rather than from the prompt-conditioned distributions
+        seen at generation time — the same trade the other methods make under
+        this protocol, and the price of scoring a comparable span.
+        """
+        if not text or not text.strip():
+            return None
+        ids = tokenizer(text, add_special_tokens=False, return_tensors="pt").input_ids[0]
+        if ids.shape[0] < 2:
+            return None
+        return detector.detect(ids.to(device), 0)
 
     def save():
         with open(out_path, "w") as f:
@@ -168,8 +229,8 @@ def main():
             )
         save()  # checkpoint after every batch
         done = min(start + args.batch_size, len(tasks))
-        wm_z = [z for z in (r["watermarked"]["detection"].get("z_score") for r in results) if z is not None]
-        base_z = [z for z in (r["unwatermarked"]["detection"].get("z_score") for r in results) if z is not None]
+        wm_z = utils.z_scores(r["watermarked"]["detection"] for r in results)
+        base_z = utils.z_scores(r["unwatermarked"]["detection"] for r in results)
         print(
             f"[{done}/{len(tasks)}] {time.time() - t0:.0f}s | "
             f"mean z (wm)={sum(wm_z)/max(len(wm_z),1):.2f} (base)={sum(base_z)/max(len(base_z),1):.2f}",
@@ -177,14 +238,12 @@ def main():
         )
 
     meta["finished_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
-    n_wm = sum(utils.detect_flag(r["watermarked"]["detection"]) for r in results)
-    n_fp = sum(utils.detect_flag(r["unwatermarked"]["detection"]) for r in results)
-    meta["summary"] = {
-        "detect_rate_watermarked": n_wm / len(results),
-        "false_positive_rate_unwatermarked": n_fp / len(results),
-    }
+    meta["summary"] = utils.detection_summary(results)
     save()
-    print(f"Done. TPR={n_wm}/{len(results)}, FP={n_fp}/{len(results)} -> {out_path}")
+    s = meta["summary"]
+    print(f"Done. n={s['n']} | z>thr rate={s['detect_rate_watermarked']:.1%} | "
+          f"AUROC={s['auroc']} TPR@1%={utils.fmt_pct(s['tpr@1pct'])} "
+          f"TPR@5%={utils.fmt_pct(s['tpr@5pct'])} -> {out_path}")
 
 
 if __name__ == "__main__":

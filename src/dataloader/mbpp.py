@@ -31,6 +31,12 @@ def build_prompt(task: dict) -> str:
     )
 
 
+def human_reference(task: dict) -> str:
+    """The benchmark's own solution — the negative class the CodeWM paper's ROC
+    metric scores against."""
+    return task["code"]
+
+
 def result_extras(task: dict) -> dict:
     return {"task": task}
 

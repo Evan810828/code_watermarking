@@ -77,6 +77,13 @@ def build_prompt(task: dict) -> str:
     return prompt
 
 
+def human_reference(task: dict) -> None:
+    """LiveCodeBench ships tests, not reference solutions, so there is no human
+    negative class here — detection metrics fall back to the paired
+    unwatermarked completion."""
+    return None
+
+
 def result_extras(task: dict) -> dict:
     # the full task (with question_content) is large; store labels only
     return {"platform": task["platform"], "difficulty": task["difficulty"]}

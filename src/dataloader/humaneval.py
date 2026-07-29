@@ -30,6 +30,12 @@ def build_prompt(task: dict) -> str:
     )
 
 
+def human_reference(task: dict) -> str:
+    """Stub + canonical solution — the negative class the CodeWM paper's ROC
+    metric scores against."""
+    return task["prompt"] + task["canonical_solution"]
+
+
 def result_extras(task: dict) -> dict:
     return {"task": task}
 

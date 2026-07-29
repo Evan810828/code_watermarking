@@ -8,6 +8,8 @@ interface so runners never need dataset-specific code:
     load_tasks(limit=None, shard=None, num_shards=None) -> list[dict]
     task_id(task) -> str | int
     build_prompt(task) -> str          # user-message content
+    human_reference(task) -> str|None  # benchmark's own solution, or None if
+                                       # the dataset ships no reference code
     result_extras(task) -> dict        # extra per-result keys to store
     evaluate(task, code, timeout) -> {"passed": bool, "reason": str, ...}
 
@@ -33,6 +35,29 @@ NO_COMMENTS_RULE = (
     "Do not include any comments in your code: no '#' comments, no "
     "docstrings, and no explanatory text inside the code block."
 )
+
+
+def system_prompt(ds, allow_comments: bool = False) -> str | None:
+    """A dataset's system message, with NO_COMMENTS_RULE optionally dropped.
+
+    Every dataloader composes SYSTEM_PROMPT as "<base> " + NO_COMMENTS_RULE, so
+    the comments-allowed control cell is that same string minus the rule — the
+    only difference between the two cells is the rule itself. The invariant is
+    asserted rather than assumed: a dataloader that ever stops ending with the
+    rule verbatim would otherwise leave the prohibition in the control cell, and
+    the experiment would silently compare a cell against itself.
+    """
+    if not allow_comments:
+        return ds.SYSTEM_PROMPT
+    prompt = ds.SYSTEM_PROMPT
+    if not prompt:
+        return prompt
+    if prompt.count(NO_COMMENTS_RULE) != 1 or not prompt.endswith(NO_COMMENTS_RULE):
+        raise ValueError(
+            f"{ds.NAME}.SYSTEM_PROMPT must end with exactly one verbatim "
+            "NO_COMMENTS_RULE for the comments-allowed control to be well defined"
+        )
+    return prompt.removesuffix(NO_COMMENTS_RULE).strip() or None
 
 
 def get(name: str):

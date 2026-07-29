@@ -40,6 +40,10 @@ def main():
     ap.add_argument("--dataset", choices=dataloader.DATASETS, required=True)
     ap.add_argument("--impl", choices=["pilot", "official"], required=True)
     ap.add_argument("--mode", choices=["generate", "detect-control"], default="generate")
+    ap.add_argument("--rescore", metavar="RESULT_JSON",
+                    help="re-detect an existing run's stored completions under "
+                    "the current protocol and write <stem>.rescored.json; no "
+                    "generation (the SBERT embedder is loaded, the LLM is not)")
     ap.add_argument("--control-file", default=None,
                     help="KGW run whose unwatermarked completions serve as the "
                     "FP control (default: the pilot KGW file for this dataset)")
@@ -118,16 +122,21 @@ def main():
             )
 
         def generate(prompt):
-            wm = generator.generate(prompt)
-            wm["detection"] = detector.detect(wm["completion"])
-            return wm
+            return generator.generate(prompt)
 
-        def detect(prompt, completion):
-            return detector.detect(completion)
+        def detect_program(text, prompt=None):
+            """Unified protocol: segment and score the extracted program.
+
+            SemStamp segments the text (line segmenter) and runs a chain z-test
+            over segment embeddings, so scoping to the program changes which
+            segments exist — prose sentences around the fence stop counting.
+            That is the intent: every method scores the same span.
+            """
+            return detector.detect(text) if text and text.strip() else None
 
         wm_meta = {"algorithm": "SemStamp", "implementation": "pilot (wm/semstamp)",
                    **config.to_dict()}
-        return generate, detect, wm_meta
+        return generate, detect_program, wm_meta
 
     def build_official(model, tokenizer):
         from transformers import GenerationConfig
@@ -158,9 +167,61 @@ def main():
             z_threshold=args.z_threshold,
             segmenter="line" if args.segmenter == "line" else "sent",
         )
-        return impl.generate, impl.detect, impl.meta
+        def detect_program(text, prompt=None):
+            # official SemStamp anchors the chain's first segment on the prompt
+            return impl.detect(prompt or "", text) if text and text.strip() else None
+
+        return impl.generate, detect_program, impl.meta
 
     build = build_pilot if args.impl == "pilot" else build_official
+
+    # ------------------------------------------------------------- rescore
+
+    if args.rescore:
+        # SemStamp detection needs the SBERT embedder, never the LLM.
+        from transformers import AutoTokenizer
+
+        src = Path(args.rescore)
+        data = json.loads(src.read_text())
+        tokenizer = AutoTokenizer.from_pretrained(data["meta"].get("model", args.model))
+        _, detect_program, _ = build(None, tokenizer)
+        tasks_by_id = {ds.task_id(t): t for t in ds.load_tasks()}
+
+        def prompt_of(r):
+            task = tasks_by_id.get(r["task_id"])
+            return utils.task_chat_text(tokenizer, ds, task) if task else None
+
+        # SemStamp generates no baseline of its own; the negative class comes
+        # from a KGW run's unwatermarked completions. Older files stored it only
+        # for the task_ids that happened to be in the control at the time (and
+        # the HumanEval cells not at all), so rebuild it here — otherwise the
+        # rescore has no negative class and every ROC comes out None.
+        ctrl_path = (Path(args.control_file) if args.control_file
+                     else utils.find_kgw_control(ds.NAME, utils.model_tag(args.model)))
+        unwm_by_id = {}
+        if ctrl_path.exists():
+            with open(ctrl_path) as f:
+                for r in json.load(f)["results"]:
+                    unwm_by_id[r["task_id"]] = r["unwatermarked"]["completion"]
+            print(f"  negative class from {ctrl_path.name} ({len(unwm_by_id)} tasks)")
+        else:
+            print(f"  WARNING: no control file at {ctrl_path}; ROC will be empty")
+        src_results = []
+        for r in data["results"]:
+            r = dict(r)
+            if "unwatermarked_control" not in r and r["task_id"] in unwm_by_id:
+                r["unwatermarked_control"] = {"completion": unwm_by_id[r["task_id"]]}
+            src_results.append(r)
+
+        results = utils.rescore_results(src_results, detect_program, prompt_of)
+        meta = utils.rescore_meta(data["meta"], src, results)
+        dst = utils.rescore_path(src)
+        dst.write_text(json.dumps({"meta": meta, "results": results}, indent=2))
+        s = meta["summary"]
+        print(f"Rescored {len(results)} records -> {dst}")
+        print(f"  AUROC={s['auroc']} TPR@1%={utils.fmt_pct(s['tpr@1pct'])} "
+              f"TPR@5%={utils.fmt_pct(s['tpr@5pct'])}")
+        return
 
     # ------------------------------------------------------- detect-control
 
@@ -169,21 +230,24 @@ def main():
         from transformers import AutoTokenizer
 
         tokenizer = AutoTokenizer.from_pretrained(args.model)
-        _, detect, wm_meta = build(None, tokenizer)
+        _, detect_program, wm_meta = build(None, tokenizer)
         with open(args.control_file) as f:
             control = json.load(f)["results"]
         tasks = {ds.task_id(t): t for t in ds.load_tasks()}
         out = []
         for i, r in enumerate(control):
             prompt = utils.task_chat_text(tokenizer, ds, tasks[r["task_id"]])
-            det = detect(prompt, r["unwatermarked"]["completion"])
+            det = detect_program(
+                utils.extract_program(r["unwatermarked"]["completion"]), prompt
+            )
             out.append({"task_id": r["task_id"], "detection": det})
             if (i + 1) % 50 == 0:
                 print(f"[{i+1}/{len(control)}]", flush=True)
-        n_fp = sum(d["detection"]["is_watermarked"] for d in out)
+        n_fp = sum(bool(d["detection"]) and utils.detect_flag(d["detection"]) for d in out)
         meta = {
             "control_file": str(args.control_file),
             "watermark": wm_meta,
+            "detection_scope": utils.DETECTION_SCOPE,
             "summary": {"false_positive_rate": n_fp / len(out), "n": len(out)},
         }
         out_path = out_root / f"semstamp_{ds.NAME}_{args.impl}_control_detection.json"
@@ -209,9 +273,11 @@ def main():
     print(f"{len(tasks)} {ds.NAME} tasks in this shard -> {out_path}")
 
     results = []
+    prior_meta = {}
     if out_path.exists():
         with open(out_path) as f:
-            results = json.load(f)["results"]
+            prior = json.load(f)
+        results, prior_meta = prior["results"], prior.get("meta", {})
     done = {r["task_id"] for r in results}
     if args.sub is not None and out_path != parent_path and parent_path.exists():
         with open(parent_path) as f:
@@ -232,7 +298,7 @@ def main():
 
     print(f"Loading {args.model} ...")
     tokenizer, model = utils.load_hf_model(args.model, device)
-    generate, detect, wm_meta = build(model, tokenizer)
+    generate, detect_program, wm_meta = build(model, tokenizer)
 
     meta = {
         "model": args.model,
@@ -249,10 +315,13 @@ def main():
             "num_candidates": args.num_candidates if args.impl == "pilot" else None,
             "segment_max_tokens": args.segment_max_tokens if args.impl == "pilot" else None,
         },
+        "system_prompt": dataloader.system_prompt(ds),
+        "detection_scope": utils.DETECTION_SCOPE,
         "seed": args.seed,
         "unwatermarked_source": str(control_path) if unwm_by_id else None,
-        "started_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "started_at": prior_meta.get("started_at", time.strftime("%Y-%m-%d %H:%M:%S")),
     }
+    utils.assert_resumable(prior_meta, meta, out_path)
 
     def save():
         with open(out_path, "w") as f:
@@ -264,8 +333,11 @@ def main():
         tid = ds.task_id(task)
         prompt = utils.task_chat_text(tokenizer, ds, task)
         t_task = time.time()
-        wm = generate(prompt)
-        wm["extracted_code"] = utils.extract_code(wm["completion"])
+        gen = generate(prompt)
+        wm = utils.branch_record(gen["completion"], None, detect_program, prompt)
+        # keep the generator's own bookkeeping (sampling_stats, trials, ...)
+        wm.update({k: v for k, v in gen.items()
+                   if k not in ("completion", "extracted_code", "detection")})
         wm["gen_seconds"] = round(time.time() - t_task, 1)
 
         entry = {
@@ -276,10 +348,9 @@ def main():
             "watermarked": wm,
         }
         if tid in unwm_by_id:
-            entry["unwatermarked_control"] = {
-                "completion": unwm_by_id[tid],
-                "detection": detect(prompt, unwm_by_id[tid]),
-            }
+            entry["unwatermarked_control"] = utils.branch_record(
+                unwm_by_id[tid], None, detect_program, prompt
+            )
         results.append(entry)
         save()  # checkpoint after every task
 
@@ -293,19 +364,12 @@ def main():
         )
 
     meta["finished_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
-    n_wm = sum(r["watermarked"]["detection"]["is_watermarked"] for r in results)
-    n_fp = sum(
-        r["unwatermarked_control"]["detection"]["is_watermarked"]
-        for r in results
-        if "unwatermarked_control" in r
-    )
-    n_ctrl = sum("unwatermarked_control" in r for r in results)
-    meta["summary"] = {
-        "detect_rate_watermarked": n_wm / len(results),
-        "false_positive_rate_unwatermarked": n_fp / n_ctrl if n_ctrl else None,
-    }
+    meta["summary"] = utils.detection_summary(results)
     save()
-    print(f"Done. TPR={n_wm}/{len(results)}, FP={n_fp}/{n_ctrl} -> {out_path}")
+    s = meta["summary"]
+    print(f"Done. n={s['n']} | z>thr rate={s['detect_rate_watermarked']:.1%} | "
+          f"AUROC={s['auroc']} TPR@1%={utils.fmt_pct(s['tpr@1pct'])} "
+          f"TPR@5%={utils.fmt_pct(s['tpr@5pct'])} -> {out_path}")
 
 
 if __name__ == "__main__":

@@ -5,6 +5,12 @@
     python train_codewm.py build   # ngram dataset: teacher top-K logits + entropy
     python train_codewm.py train   # distill + CE + switch training
 
+Train the full cosine horizon (--patience 1000) and point inference at
+best_rank.pt: upstream trains a FIXED 1000 epochs and keeps the final
+checkpoint (src/train.py saves "final", no val selection), while best.pt's
+total-val-loss pick is switch-dominated (alpha_switch=8) and fires epochs
+before the ranking — the watermark's actual signal — has converged.
+
 Faithful to upstream (src/datahelper.py gen_mbpp + src/train.py +
 modelhelper.compute_loss) with these documented deltas:
 
@@ -95,7 +101,7 @@ def cmd_gen(args):
         jobs = [(t, s) for t, s in jobs if (t["task_id"], s) not in done]
         print(f"Resuming: {len(records)} done, {len(jobs)} remaining")
 
-    tokenizer, model = utils.load_hf_model(args.model, device, padding_side="left")
+    tokenizer, model = utils.load_hf_model(args.model, device, padding_side="left", trust_remote_code=args.trust_remote_code)
     meta = {
         "model": args.model,
         "corpus": "mbpp train+validation+prompt",
@@ -170,7 +176,7 @@ def cmd_build(args):
         out_dir = Path(args.work_dir) / f"ngrams_alpaca_cw{cw}_k{topk}"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    tokenizer, model = utils.load_hf_model(args.model, device)
+    tokenizer, model = utils.load_hf_model(args.model, device, trust_remote_code=args.trust_remote_code)
     if args.corpus == "mbpp+alpaca":
         alpaca = load_codealpaca(tokenizer, args.alpaca_limit)
         print(f"Loaded {len(alpaca)} codealpaca sequences")
@@ -266,7 +272,7 @@ def cmd_train(args):
 
     from transformers import AutoConfig
 
-    model_cfg = AutoConfig.from_pretrained(args.model)
+    model_cfg = AutoConfig.from_pretrained(args.model, trust_remote_code=args.trust_remote_code)
     model_cfg = getattr(model_cfg, "text_config", model_cfg)
     vocab_size = model_cfg.vocab_size
     model = CodeModel({"vocab_size": vocab_size}).to(device)
@@ -381,6 +387,8 @@ def main():
     ap.add_argument("stage", choices=["gen", "build", "train"])
     ap.add_argument("--work-dir", default=WORK_DIR_DEFAULT)
     ap.add_argument("--model", default="Qwen/Qwen3.5-4B")
+    ap.add_argument("--trust-remote-code", action="store_true",
+                    help="models with custom hub code (e.g. OpenCoder)")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--limit", type=int, default=None)
     # gen

@@ -49,14 +49,15 @@ def build_pilot(args, tokenizer, model, device):
     processor = KGWLogitsProcessor(config, kgw_utils)
     detector = KGWDetector(config, kgw_utils)
 
-    def detect(completion, full_ids, prompt_len):
-        # Detection: score generated tokens with their true left context
-        # (prompt + generation). With prefix_length=1 the left pads in the
-        # batched prompt cannot influence any scored position.
-        return detector.detect(full_ids, scored_from=prompt_len)
+    def detect_program(text, prompt=None):
+        """Unified protocol: score the extracted program standalone."""
+        if not text or not text.strip():
+            return None
+        ids = tokenizer(text, add_special_tokens=False, return_tensors="pt").input_ids[0]
+        return detector.detect(ids.to(device))
 
     meta = {"algorithm": "KGW", "implementation": "pilot (wm/kgw)", **config.to_dict()}
-    return processor, detect, meta
+    return processor, detect_program, meta
 
 
 def build_official(args, tokenizer, model, device):
@@ -71,7 +72,11 @@ def build_official(args, tokenizer, model, device):
         z_threshold=args.z_threshold,
         ignore_repeated_ngrams=args.ignore_repeated_ngrams,
     )
-    return impl.logits_processor, impl.detect, impl.meta
+    # official KGW's detect already takes the text as its first argument
+    def detect_program(text, prompt=None):
+        return impl.detect(text) if text and text.strip() else None
+
+    return impl.logits_processor, detect_program, impl.meta
 
 
 def main():
@@ -91,10 +96,52 @@ def main():
     # official-only
     ap.add_argument("--seeding-scheme", default="lefthash")
     ap.add_argument("--ignore-repeated-ngrams", action=argparse.BooleanOptionalAction, default=True)
+    ap.add_argument("--rescore", metavar="RESULT_JSON",
+                    help="re-detect an existing run's stored completions under "
+                    "the current protocol and write <stem>.rescored.json; no "
+                    "generation, and the watermark config is taken from the file")
     args = ap.parse_args()
 
     torch.manual_seed(args.seed)
     device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    if args.rescore:
+        # KGW detection needs the tokenizer and the greenlist scheme, never the
+        # LLM — so a rescore costs no generation and no model load.
+        from transformers import AutoTokenizer
+
+        src = Path(args.rescore)
+        data = json.loads(src.read_text())
+        applied = utils.rescore_args_from_meta(
+            args, data["meta"], ("gamma", "delta", "hash_key", "prefix_length",
+                                 "z_threshold", "seeding_scheme")
+        )
+        for line in applied:
+            print(f"  config from file -> {line}")
+        model_name = data["meta"].get("model", args.model)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_name, trust_remote_code=args.trust_remote_code
+        )
+        # the greenlist only needs the vocab size, so read the config and skip
+        # loading ~8 GB of weights
+        from types import SimpleNamespace
+
+        from transformers import AutoConfig
+
+        shim = SimpleNamespace(config=AutoConfig.from_pretrained(
+            model_name, trust_remote_code=args.trust_remote_code))
+        build = build_pilot if args.impl == "pilot" else build_official
+        _, detect_program, _ = build(args, tokenizer, shim, device)
+        results = utils.rescore_results(data["results"], detect_program)
+        meta = utils.rescore_meta(data["meta"], src, results)
+        dst = utils.rescore_path(src)
+        dst.write_text(json.dumps({"meta": meta, "results": results}, indent=2))
+        s = meta["summary"]
+        print(f"Rescored {len(results)} records -> {dst}")
+        print(f"  AUROC={s['auroc']} TPR@1%={utils.fmt_pct(s['tpr@1pct'])} "
+              f"TPR@5%={utils.fmt_pct(s['tpr@5pct'])} "
+              f"(was: {json.dumps(data['meta'].get('summary', {}))[:90]})")
+        return
 
     ds = dataloader.get(args.dataset)
     tasks = ds.load_tasks(limit=args.limit)
@@ -110,9 +157,11 @@ def main():
     out_path.parent.mkdir(exist_ok=True, parents=True)
 
     results = []
+    prior_meta = {}
     if out_path.exists():
         with open(out_path) as f:
-            results = json.load(f)["results"]
+            prior = json.load(f)
+        results, prior_meta = prior["results"], prior.get("meta", {})
         done = {r["task_id"] for r in results}
         tasks = [t for t in tasks if ds.task_id(t) not in done]
         print(f"Resuming: {len(results)} done, {len(tasks)} remaining")
@@ -121,7 +170,7 @@ def main():
     tokenizer, model = utils.load_hf_model(args.model, device, padding_side="left")
 
     build = build_pilot if args.impl == "pilot" else build_official
-    processor, detect, wm_meta = build(args, tokenizer, model, device)
+    processor, detect_program, wm_meta = build(args, tokenizer, model, device)
     wm_processor = LogitsProcessorList([processor])
 
     gen_kwargs = dict(
@@ -139,9 +188,12 @@ def main():
         "num_tasks": len(results) + len(tasks),
         "watermark": wm_meta,
         "generation": {k: v for k, v in gen_kwargs.items() if k != "pad_token_id"},
+        "system_prompt": dataloader.system_prompt(ds),
+        "detection_scope": utils.DETECTION_SCOPE,
         "seed": args.seed,
-        "started_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "started_at": prior_meta.get("started_at", time.strftime("%Y-%m-%d %H:%M:%S")),
     }
+    utils.assert_resumable(prior_meta, meta, out_path)
 
     def generate_batch(chat_texts: list[str], watermark: bool):
         enc = tokenizer(chat_texts, return_tensors="pt", padding=True).to(device)
@@ -160,14 +212,8 @@ def main():
             if len(eos_pos) > 0:
                 gen_ids = gen_ids[: eos_pos[0] + 1]
             completion = tokenizer.decode(gen_ids, skip_special_tokens=True)
-            full_ids = torch.cat([enc.input_ids[b].to(device), gen_ids.to(device)])
             outs.append(
-                {
-                    "completion": completion,
-                    "extracted_code": utils.extract_code(completion),
-                    "num_gen_tokens": int(gen_ids.shape[0]),
-                    "detection": detect(completion, full_ids, prompt_len),
-                }
+                utils.branch_record(completion, int(gen_ids.shape[0]), detect_program)
             )
         return outs
 
@@ -194,8 +240,8 @@ def main():
             )
         save()  # checkpoint after every batch
         done = min(start + args.batch_size, len(tasks))
-        wm_z = [z for z in (r["watermarked"]["detection"].get("z_score") for r in results) if z is not None]
-        base_z = [z for z in (r["unwatermarked"]["detection"].get("z_score") for r in results) if z is not None]
+        wm_z = utils.z_scores(r["watermarked"]["detection"] for r in results)
+        base_z = utils.z_scores(r["unwatermarked"]["detection"] for r in results)
         print(
             f"[{done}/{len(tasks)}] {time.time() - t0:.0f}s | "
             f"mean z (wm)={sum(wm_z)/max(len(wm_z),1):.2f} (base)={sum(base_z)/max(len(base_z),1):.2f}",
@@ -203,14 +249,12 @@ def main():
         )
 
     meta["finished_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
-    n_wm = sum(utils.detect_flag(r["watermarked"]["detection"]) for r in results)
-    n_fp = sum(utils.detect_flag(r["unwatermarked"]["detection"]) for r in results)
-    meta["summary"] = {
-        "detect_rate_watermarked": n_wm / len(results),
-        "false_positive_rate_unwatermarked": n_fp / len(results),
-    }
+    meta["summary"] = utils.detection_summary(results)
     save()
-    print(f"Done. TPR={n_wm}/{len(results)}, FP={n_fp}/{len(results)} -> {out_path}")
+    s = meta["summary"]
+    print(f"Done. n={s['n']} | z>thr rate={s['detect_rate_watermarked']:.1%} | "
+          f"AUROC={s['auroc']} TPR@1%={utils.fmt_pct(s['tpr@1pct'])} "
+          f"TPR@5%={utils.fmt_pct(s['tpr@5pct'])} -> {out_path}")
 
 
 if __name__ == "__main__":
