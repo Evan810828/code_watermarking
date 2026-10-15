@@ -1,0 +1,140 @@
+{
+  "kind": "operational_numerical_diagnostic",
+  "host": "aga14",
+  "gpu": "NVIDIA A100-SXM4-40GB",
+  "scope": "Saved SBERT/MBPP tasks 176 and 242; no language-model generation",
+  "tasks": [
+    {
+      "task_id": 176,
+      "generation_center_unique_programs": 1,
+      "calibration_equal_to_selected": 20,
+      "center_recompute_max_abs_error": 0.0,
+      "recorded_generation_signature": 7,
+      "recorded_generation_accepted": false,
+      "accepted_regions": [
+        3,
+        6
+      ],
+      "batch_checks": [
+        {
+          "repeated_program_batch_size": 1,
+          "signature": 3,
+          "green": true,
+          "embedding_max_abs_diff_from_single": 0.0,
+          "centered_norm": 1.6080966815934516e-06,
+          "embedding_norm": 2.599982976913452,
+          "projected_residual": [
+            -6.965504393419531e-07,
+            2.149097229816666e-06,
+            2.7021680875619693e-07
+          ]
+        },
+        {
+          "repeated_program_batch_size": 2,
+          "signature": 7,
+          "green": false,
+          "embedding_max_abs_diff_from_single": 1.1920928955078125e-07,
+          "centered_norm": 1.68867506999959e-06,
+          "embedding_norm": 2.599982976913452,
+          "projected_residual": [
+            1.71605772383946e-06,
+            1.967430219985675e-06,
+            1.1185873215856097e-07
+          ]
+        },
+        {
+          "repeated_program_batch_size": 8,
+          "signature": 2,
+          "green": false,
+          "embedding_max_abs_diff_from_single": 1.341104507446289e-07,
+          "centered_norm": 1.7693133713692077e-06,
+          "embedding_norm": 2.599982976913452,
+          "projected_residual": [
+            -4.999549797498963e-07,
+            1.4492247304405877e-06,
+            -1.0223045970782701e-07
+          ]
+        },
+        {
+          "repeated_program_batch_size": 20,
+          "signature": 6,
+          "green": true,
+          "embedding_max_abs_diff_from_single": 1.7136335372924805e-07,
+          "centered_norm": 3.541832711562165e-07,
+          "embedding_norm": 2.5999832153320312,
+          "projected_residual": [
+            4.848347044564302e-07,
+            1.972670749858839e-07,
+            -4.128277060830928e-07
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 242,
+      "generation_center_unique_programs": 1,
+      "calibration_equal_to_selected": 20,
+      "center_recompute_max_abs_error": 0.0,
+      "recorded_generation_signature": 5,
+      "recorded_generation_accepted": true,
+      "accepted_regions": [
+        5,
+        7
+      ],
+      "batch_checks": [
+        {
+          "repeated_program_batch_size": 1,
+          "signature": 1,
+          "green": false,
+          "embedding_max_abs_diff_from_single": 0.0,
+          "centered_norm": 1.55773818732996e-06,
+          "embedding_norm": 2.327695369720459,
+          "projected_residual": [
+            -1.4619797019698139e-06,
+            -1.0792404623510636e-06,
+            2.8753421586763266e-06
+          ]
+        },
+        {
+          "repeated_program_batch_size": 2,
+          "signature": 1,
+          "green": false,
+          "embedding_max_abs_diff_from_single": 1.471489667892456e-07,
+          "centered_norm": 1.5191072861853172e-06,
+          "embedding_norm": 2.327695369720459,
+          "projected_residual": [
+            -3.8932156482845117e-07,
+            -2.4455638257498743e-06,
+            2.522426702495712e-06
+          ]
+        },
+        {
+          "repeated_program_batch_size": 8,
+          "signature": 5,
+          "green": true,
+          "embedding_max_abs_diff_from_single": 1.3597309589385986e-07,
+          "centered_norm": 1.646370833441324e-06,
+          "embedding_norm": 2.327695608139038,
+          "projected_residual": [
+            3.386336628478436e-07,
+            -1.0953082577761789e-07,
+            2.8189443273965086e-06
+          ]
+        },
+        {
+          "repeated_program_batch_size": 20,
+          "signature": 7,
+          "green": true,
+          "embedding_max_abs_diff_from_single": 1.7136335372924805e-07,
+          "centered_norm": 3.2228498980657605e-07,
+          "embedding_norm": 2.327695369720459,
+          "projected_residual": [
+            1.0221170950037044e-07,
+            1.1313992966020503e-07,
+            5.672698683055734e-08
+          ]
+        }
+      ]
+    }
+  ]
+}

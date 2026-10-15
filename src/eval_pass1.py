@@ -56,6 +56,12 @@ def main():
             if not code:
                 entry[b] = {"passed": False, "reason": "no_code"}
                 continue
+            if "\x00" in code:
+                # Python rejects NUL in source, and argv cannot carry it.
+                # Count invalid code as a failed attempt without repairing it
+                # or aborting evaluation of the remaining benchmark tasks.
+                entry[b] = {"passed": False, "reason": "fail"}
+                continue
             entry[b] = ds.evaluate(task, code, timeout)
         return entry
 

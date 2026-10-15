@@ -1,128 +1,147 @@
-# Code Watermarking Pilot Study
+# Watermarking baselines for code generation
 
-Pilot study of LLM watermarking methods — **KGW**, **SemStamp**, **SWEET**,
-and **CodeWM** (Guo & Cheng, NeurIPS 2025) — on code generation benchmarks
-(**HumanEval**, **MBPP**, **LiveCodeBench**) with Qwen3.5-4B.
+A measurement and exploration repository for KGW, SemStamp, SWEET, CodeWM,
+and SeqMark on HumanEval, MBPP, and LiveCodeBench. It contains method
+implementations, dataset integrations, existing benchmark results, and the
+original evidence needed to inspect those results.
 
-## Methods & Datasets
+[Full results](out/README.md) · [Evidence archives](results/README.md) ·
+[Experiment index](results/experiments.csv) ·
+[Local research report](docs/baseline_benchmarks.pdf) ·
+[Implementation](IMPLEMENTATION.md)
 
-| Method | Paper | Venue | Official code | Implementation here |
+## Methods and measured coverage
+
+| Method | Implementations | HumanEval | MBPP test | LiveCodeBench v1 |
 |---|---|---|---|---|
-| **KGW** | [A Watermark for Large Language Models](https://arxiv.org/abs/2301.10226) (Kirchenbauer et al.) | ICML 2023 | [jwkirchenbauer/lm-watermarking](https://github.com/jwkirchenbauer/lm-watermarking) | `run_kgw.py`; `wm/kgw/` (pilot) or `wm/MarkLLM_official/` (official) |
-| **SemStamp** | [SemStamp: A Semantic Watermark with Paraphrastic Robustness for Text Generation](https://arxiv.org/abs/2310.03991) (Hou et al.) | NAACL 2024 | [bohanhou14/SemStamp](https://github.com/bohanhou14/SemStamp) | `run_semstamp.py`; `wm/semstamp/` (pilot) or `wm/MarkLLM_official/` (official) |
-| **SWEET** | [Who Wrote this Code? Watermarking for Code Generation](https://arxiv.org/abs/2305.15060) (Lee et al.) | ACL 2024 | [hongcheki/sweet-watermark](https://github.com/hongcheki/sweet-watermark) | `run_sweet.py`; `wm/sweet/` (core-only port) |
-| **CodeWM** | [Practical and Effective Code Watermarking for Large Language Models](https://openreview.net/forum?id=RpE4HeuX69) (Guo & Cheng) | NeurIPS 2025 | [TimeLovercc/code-watermark](https://github.com/TimeLovercc/code-watermark) | `run_codewm.py` + `train_codewm.py`; `wm/codewm/` (core-only port) |
+| KGW | Local pilot, original implementation, historical MarkLLM/vLLM | Complete | Complete | Complete |
+| SemStamp | Local pilot, original implementation, historical MarkLLM/vLLM | Complete | Complete | Complete |
+| SWEET | Local port | Complete | Complete | Complete |
+| CodeWM | Local port and original-paper completion protocol | Full and capped variants | Full and capped variants | Capped variants |
+| SeqMark | Complete-program port with Gemma and SBERT encoders | Complete, both encoders | Complete, both encoders | Cancelled; partial evidence retained |
 
-KGW and SemStamp are additionally reproduced through the
-[THU-BPM/MarkLLM](https://github.com/THU-BPM/MarkLLM) toolkit with vLLM
-inference (`src/wm/markllm/`).
+Full split sizes are 164, 500, and 400 tasks, respectively. Coverage describes
+available measurements, not all possible method/implementation combinations.
+The report retains parameter variants, the first experimental round,
+original-paper reproductions, and superseded results separately.
 
-| Dataset | Tasks used | Paper | Source |
-|---|---|---|---|
-| **HumanEval** | 164 (full set) | [Evaluating Large Language Models Trained on Code](https://arxiv.org/abs/2107.03374) | [openai/human-eval](https://github.com/openai/human-eval) |
-| **MBPP** | 500 (test split) | [Program Synthesis with Large Language Models](https://arxiv.org/abs/2108.07732) | [google-research-datasets/mbpp](https://huggingface.co/datasets/google-research-datasets/mbpp) |
-| **LiveCodeBench** | 400 (release v1, code_generation test split) | [LiveCodeBench: Holistic and Contamination Free Evaluation of Large Language Models for Code](https://arxiv.org/abs/2403.07974) | [LiveCodeBench/LiveCodeBench](https://github.com/LiveCodeBench/LiveCodeBench) |
+Detection uses extracted Python programs and paired unwatermarked model
+outputs. The primary table reports AUROC, true positive rate at 1% and 5%
+false positive rate, mean detector scores, scoreability, and pass@1 for both
+branches. Tied scores remain together at deterministic thresholds. Read
+scoreability and cohort size alongside detection metrics.
 
-## Setup
+SeqMark uses different sampling settings from the other baselines. CodeWM's
+original-paper protocol uses completion prompts and a 20-sample pass@1
+estimator. These settings are documented in the report and must not be
+interpreted as a controlled method-only comparison.
+
+## Inspect existing results without a GPU
 
 ```bash
 git clone https://github.com/Evan810828/code_watermarking.git
 cd code_watermarking
+python3 src/result_archive.py verify
+python3 src/result_archive.py restore
+python3 -m pip install numpy
+cd src
+python3 utils.py summarize-methods
+python3 utils.py summarize-seqmark
+```
+
+Archive verification and restoration use only the Python standard library.
+The summary commands need Python 3.10 or newer and NumPy (`python3 -m pip
+install numpy`); generation uses the Python 3.12 environment below.
+Restore retains original file bytes and paths, and refuses to overwrite a
+file with different contents. Use `--destination /path/to/empty-directory`
+for an independent copy. The archive inventory includes hashes for every
+file. Model weights and download caches are excluded.
+
+## Install generation dependencies
+
+```bash
 conda create -n watermark python=3.12 -y
 conda activate watermark
 pip install -r requirements.txt
 python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab')"
 ```
 
+The requirements retain reference-environment version constraints. They are
+not a complete environment lockfile. Upstream KGW and SemStamp adapters
+require the corresponding source repository next to this repository, or an
+environment-variable override:
 
-
-### Optional: official / MarkLLM reproductions
-
-`--impl official` (via `src/wm/MarkLLM_official/`) and `src/wm/markllm/`
-import from the authors' original repos. Clone whichever you need **next to
-this repo** (or point the environment variable at an existing clone):
-
-| Needed for | Clone | Env var override |
+| Adapter | Upstream repository | Override |
 |---|---|---|
-| `run_kgw.py --impl official` | [jwkirchenbauer/lm-watermarking](https://github.com/jwkirchenbauer/lm-watermarking) | `LM_WATERMARKING_DIR` |
-| `run_semstamp.py --impl official` | [bohanhou14/SemStamp](https://github.com/bohanhou14/SemStamp) | `SEMSTAMP_DIR` |
-| `src/wm/markllm/` scripts | [THU-BPM/MarkLLM](https://github.com/THU-BPM/MarkLLM) | `MARKLLM_ROOT` |
+| KGW `--impl official` | [lm-watermarking](https://github.com/jwkirchenbauer/lm-watermarking) | `LM_WATERMARKING_DIR` |
+| SemStamp `--impl official` | [SemStamp](https://github.com/bohanhou14/SemStamp) | `SEMSTAMP_DIR` |
+| MarkLLM/vLLM | [MarkLLM](https://github.com/THU-BPM/MarkLLM) | `MARKLLM_ROOT` |
 
-The MarkLLM+vLLM scripts run in a separate env (`vllm==0.18`,
-`transformers==4.57`), from their own directory (`src/wm/markllm/`).
+Historical MarkLLM/vLLM scripts use a separate environment (vLLM 0.18,
+transformers 4.57) and run from `src/wm/markllm/`. Keep that environment
+separate from the Hugging Face runners. Upstream repositories remain
+external dependencies and retain their own licenses.
 
-### Data
+## Generate and evaluate
 
-`data/` ships the slim task lists for all three benchmarks — HumanEval and
-MBPP work out of the box. LiveCodeBench pass@1 additionally needs per-task
-test files (~4GB, not in the repo): download the LiveCodeBench
-`code_generation` release v1 `test.jsonl` and run the one-time prep
+Run the method entry points from `src/`. Each runner accepts a dataset;
+prompts and benchmark evaluation are defined in `src/dataloader/`.
 
 ```bash
-cd src
+python run_kgw.py --dataset humaneval --impl pilot
+python run_semstamp.py --dataset mbpp --impl official --max-trials 32
+python run_sweet.py --dataset livecodebench
+python run_codewm.py --dataset mbpp --code-model /path/to/best_rank.pt
+
+# SeqMark with the selected scientific parameters and a new HF output path.
+python run_seqmark.py --dataset humaneval --backend hf \
+  --temperature 1.2 --top-p 1.0 --top-k -1 --repetition-penalty 1.05 \
+  --center-samples 50 --center-temperature 1.2 --max-trials 50 \
+  --lsh-dim 5 --gamma 0.1 --detector-center generation_cache \
+  --output ../out/seqmark/humaneval/seqmark_humaneval_port_hf_qwen3.5-4b.json
+
+python eval_pass1.py --input ../out/kgw/humaneval/<run>.json --tag kgw
+```
+
+The SeqMark command uses `google/embeddinggemma-300m` by default. The selected
+parameters are recorded in `out/seqmark/sweep/selected_config.json`. The recorded runs used vLLM. Select
+`--backend vllm` in the corresponding environment to use that engine.
+Changing the backend does not guarantee identical samples. The complete
+configuration and source revisions are recorded in the saved manifests.
+`--selected-config` validates the original backend and exact local model paths;
+use it only when reproducing that recorded environment.
+
+CodeWM requires a trained CodeModel. `train_codewm.py gen`, `build`, and
+`train` implement the chat-protocol training pipeline. The preserved
+original-paper inference protocol is `run_codewm_repro.py`; it additionally
+requires the historical per-model checkpoint and has different evaluation
+semantics. See [implementation details](IMPLEMENTATION.md).
+
+HumanEval and MBPP task lists include their evaluation material. LiveCodeBench
+execution additionally needs the release-v1 per-task tests, which are not
+included in Git. Prepare them with:
+
+```bash
 python -m dataloader.livecodebench --jsonl /path/to/test.jsonl
 ```
 
-which writes them to `data/lcb/tests/` (override the location with
-`$LCB_SCRATCH`, e.g. a scratch filesystem).
+This writes `data/lcb/tests/`, or `$LCB_SCRATCH/tests/` when configured.
+The stored protocol evaluates at most 20 tests per task and skips test inputs
+larger than 10 MB during preparation. `eval_pass1.py` executes generated code;
+use an isolated execution environment.
 
-## Running
+## Repository layout and documents
 
-Everything runs from `src/`:
+| Path | Contents |
+|---|---|
+| `src/` | Baseline methods, parameterized runners, evaluation, result utilities |
+| `data/` | Slim task lists for the three benchmarks |
+| `out/README.md` | Detailed measured results and historical comparisons |
+| `results/` | Compressed original evidence, inventory, restoration instructions |
+| `docs/` | Local LaTeX/PDF baseline report and document index |
+| `PROJECT.md` | Research scope |
+| `INTERFACE.md` | Evaluation and preservation contract |
+| `IMPLEMENTATION.md` | Code boundaries, commands, dependencies, provenance limitations |
 
-```bash
-# inference: any dataset x any implementation; resumable, checkpointed
-python run_kgw.py --dataset humaneval --impl pilot
-python run_semstamp.py --dataset livecodebench --impl official --max-trials 32
-python run_sweet.py --dataset mbpp
-
-# smoke test any runner
-python run_kgw.py --dataset humaneval --impl pilot --limit 4 --batch-size 2
-
-# pass@1 (dataset inferred from the file's meta; executes generated code!)
-python eval_pass1.py --input ../out/kgw/humaneval/<file>.json --tag kgw
-
-# semantic-diversity study (any subset of datasets; default: humaneval mbpp)
-python similarity_study.py --datasets humaneval mbpp livecodebench
-
-# shard merging / summaries (merge-semstamp: humaneval|mbpp; LCB has its own)
-python utils.py merge-semstamp --dataset humaneval --num-shards 4
-python utils.py merge-semstamp-lcb --num-shards 6 --impl official
-python utils.py summarize-lcb
-
-# cross-method results table on the unified evaluation protocol
-python utils.py summarize-methods [--method kgw|semstamp|sweet|codewm]
-
-# bring an existing run onto the current protocol WITHOUT regenerating:
-# re-detects the stored completions, writes <stem>.rescored.json, and takes
-# the watermark config from the file itself (pass@1 is untouched by design)
-python run_kgw.py    --dataset mbpp --impl pilot --rescore ../out/kgw/mbpp/kgw_mbpp_pilot_qwen3.5-4b.json
-python run_codewm.py --dataset mbpp --rescore ../out/codewm/mbpp/<run>.json
-```
-
-
-
-CodeWM needs its trained CodeModel first
-(`python train_codewm.py gen|build|train`); artifacts default to
-`out/codewm_train/` (relocate with `$CODEWM_WORK_DIR`, or point
-`$CODEWM_CKPT` / `--code-model` at an existing checkpoint).
-
-## Conventions
-
-- **No per-dataset scripts.** Every run is composed of a dataloader module
-  (`src/dataloader/<dataset>.py`), a watermark implementation (`src/wm/`),
-  and the dataset-agnostic runners. To add a benchmark, write one dataloader
-  module and register it in `dataloader/__init__.py`.
-- Sampling defaults (temperature 0.7, top_p 0.8, top_k 20, seed 42,
-  `enable_thinking=False`) come from `utils.add_common_args`.
-- `--max-new-tokens` defaults to each dataloader's `MAX_NEW_TOKENS`
-  (2000 everywhere).
-- System prompts are dataset-level (`SYSTEM_PROMPT` in the dataloader) and
-  all append the universal no-code-comments rule.
-- SemStamp uses the line segmenter (`--segmenter line`) for all experiments.
-- KGW/SWEET default to `delta=8` (a delta sweep showed the MarkLLM-default 2
-  is undetectable on code).
-- Detection dicts always carry `z_score` and `is_watermarked`.
-- Runners checkpoint after every batch/task and resume by `task_id` from the
-  existing output file. Outputs land in `out/<method>/<dataset>/` via
-  `utils.out_dir` — never hardcode output paths.
+No new experiments were run for the repository reorganization. Documentation
+is maintained locally; no external Overleaf project is configured.

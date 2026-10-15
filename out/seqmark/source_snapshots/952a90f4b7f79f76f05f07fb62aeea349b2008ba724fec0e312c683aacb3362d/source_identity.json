@@ -1,0 +1,14 @@
+{
+  "git_revision": "49de987c63d34f6024b390078b0d5dcad991d020",
+  "git_status": " M .gitignore\n M src/dataloader/__init__.py\n M src/utils.py\n M src/wm/MarkLLM_official/__init__.py\n M src/wm/markllm/adapter.py\n?? AGENTS.md\n?? src/run_seqmark.py\n?? src/wm/seqmark/\n",
+  "source_sha256": {
+    "src/run_seqmark.py": "eac1b45eb1bec9e18680707a22fd9422029b17de32d234ed98722cfb1b24a063",
+    "src/utils.py": "5a9c9c7ede5ec1855d23340715ab6f86c317bae2002ecd8d302fa1b73ab64904",
+    "src/wm/seqmark/__init__.py": "883e2c57a6ccfbd10a67885dc178c05f5f0563f153fda34ef88678d6250e1758",
+    "src/dataloader/__init__.py": "22248b90cb4b0f0dce9efa72c19fba2c5b48d0f42a9ceed60a242cb9ddc0de0d",
+    "src/dataloader/humaneval.py": "49b4474cd482560a118658e08bddd484d6f090eaffaf3f96520da238233a3517",
+    "src/dataloader/livecodebench.py": "b45d736b42e7c4ca7d6d61d673b50261f3308f757ecd4dac52f3ee71b652469f",
+    "src/dataloader/mbpp.py": "9ae9e7c34000db73071a6a19f0cbb26906ccb954c8682ae7511b10a373d8be72"
+  },
+  "source_fingerprint": "952a90f4b7f79f76f05f07fb62aeea349b2008ba724fec0e312c683aacb3362d"
+}

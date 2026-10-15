@@ -1,0 +1,10 @@
+{
+  "audited_task_results": 1328,
+  "paired_tasks": 664,
+  "sweep_tasks": 100,
+  "sweep_configurations": 16,
+  "generation_detection_acceptance_differences": 0,
+  "original_non_seqmark_rows_preserved": true,
+  "sweep_test_overlap": 0,
+  "all_assertions_passed": true
+}

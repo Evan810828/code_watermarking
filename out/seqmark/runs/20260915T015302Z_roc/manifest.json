@@ -1,0 +1,106 @@
+{
+  "run_id": "20260915T015302Z_roc",
+  "study": "baseline_watermarking_seqmark",
+  "stage": "roc_figure",
+  "status": "completed",
+  "started_at": "2026-09-15T01:56:01.264738+00:00",
+  "ended_at": "2026-09-15T01:56:04.172517+00:00",
+  "command": [
+    "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/runs/20260915T015302Z_roc/plot_executed.py"
+  ],
+  "code": {
+    "git_revision": "49de987c63d34f6024b390078b0d5dcad991d020",
+    "plot_source_sha256": "9351f803ba45be467208ee3c7163d8be2699895978a31e6a303573a6645e7cd6",
+    "metrics_source_sha256": "5a9c9c7ede5ec1855d23340715ab6f86c317bae2002ecd8d302fa1b73ab64904",
+    "generation_source_fingerprint": "952a90f4b7f79f76f05f07fb62aeea349b2008ba724fec0e312c683aacb3362d"
+  },
+  "resolved_configuration": {
+    "datasets": [
+      "humaneval",
+      "mbpp"
+    ],
+    "lsh_dim": 5,
+    "gamma": 0.1,
+    "center_samples": 50,
+    "seed": 42,
+    "score_scope": "extracted_program",
+    "negative_class": "paired_unwatermarked",
+    "exclude_unscoreable_per_class": true,
+    "decision_rule": "score >= threshold",
+    "top_panels": "empirical ROC vertices with conventional straight dashed connectors",
+    "bottom_panels": "max TPR among vertices with FPR <= budget; no interpolation",
+    "fpr_budgets": [
+      0.01,
+      0.05
+    ],
+    "full_axis_range": [
+      0,
+      1
+    ],
+    "budget_axis_range": [
+      0,
+      0.12
+    ],
+    "figure_inches": [
+      7.2,
+      6.8
+    ],
+    "raster_dpi": 300,
+    "uncertainty": "one seed; no error bars"
+  },
+  "source_verification": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/runs/20260914T225431Z_final_summary/manifest.json",
+  "source_verification_sha256": "8ee6dbd12e3043771961522949fb6452b4024ebcdd07827d0c9940dc5a714d46",
+  "source_results": [
+    {
+      "encoder": "google/embeddinggemma-300m",
+      "dataset": "humaneval",
+      "input": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/humaneval/seqmark_humaneval_port_cached_qwen3.5-4b.json",
+      "input_sha256": "95a9d2aff27d9f87a9abb1bbf3b1b7b096d6b1d6990abe28e5cecc64b4278881",
+      "verdict_provenance": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/humaneval/pass1_seqmark_port_cached_qwen3.5-4b_humaneval.provenance.json"
+    },
+    {
+      "encoder": "google/embeddinggemma-300m",
+      "dataset": "mbpp",
+      "input": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/mbpp/seqmark_mbpp_port_cached_qwen3.5-4b.json",
+      "input_sha256": "8c616975a0a2483615958b40292cdb2ef921028e375685b7e502d439ae1b1bcf",
+      "verdict_provenance": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/mbpp/pass1_seqmark_port_cached_qwen3.5-4b_mbpp.provenance.json"
+    },
+    {
+      "encoder": "AbeHou/SemStamp-c4-sbert",
+      "dataset": "humaneval",
+      "input": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/humaneval/seqmark_humaneval_port_sbert_cached_qwen3.5-4b.json",
+      "input_sha256": "4aed1ffea44e8153a3ab5d8f9ef809a55df5b890a75e7d695f5894e08cb52d1b",
+      "verdict_provenance": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/humaneval/pass1_seqmark_port_sbert_cached_qwen3.5-4b_humaneval.provenance.json"
+    },
+    {
+      "encoder": "AbeHou/SemStamp-c4-sbert",
+      "dataset": "mbpp",
+      "input": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/mbpp/seqmark_mbpp_port_sbert_cached_qwen3.5-4b.json",
+      "input_sha256": "d62ffd25fb5e0a98ac5df324d5fb0fc825ee666877b2260c93049037748dd40c",
+      "verdict_provenance": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/mbpp/pass1_seqmark_port_sbert_cached_qwen3.5-4b_mbpp.provenance.json"
+    }
+  ],
+  "environment": {
+    "host": "n1",
+    "python": "3.12.13",
+    "matplotlib": "3.11.0",
+    "numpy": "2.5.1"
+  },
+  "artifacts": [
+    {
+      "path": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/runs/20260915T015302Z_roc/seqmark_roc.pdf",
+      "sha256": "fc3798a3c3e2a7e280a9fbf5e1c0713ee7b09e861f908a99d9d5893e5ee7f0e4",
+      "published_path": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/figures/seqmark_roc.pdf"
+    },
+    {
+      "path": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/runs/20260915T015302Z_roc/seqmark_roc.png",
+      "sha256": "eb0856defd400701dfa5d2c070dfe7a095f37d39ba97e9bfc21d7976c48f3dc0",
+      "published_path": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/figures/seqmark_roc.png"
+    },
+    {
+      "path": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/runs/20260915T015302Z_roc/seqmark_roc_points.csv",
+      "sha256": "8bf214c2c485237d3e2a1c57ba9ef54f4eb6e378b54f42feb2e92462a11c33ab",
+      "published_path": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/figures/seqmark_roc_points.csv"
+    }
+  ]
+}

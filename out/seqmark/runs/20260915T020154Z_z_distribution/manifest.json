@@ -1,0 +1,100 @@
+{
+  "run_id": "20260915T020154Z_z_distribution",
+  "study": "baseline_watermarking_seqmark",
+  "stage": "z_score_distribution",
+  "status": "completed",
+  "started_at": "2026-09-15T02:04:32.386032+00:00",
+  "ended_at": "2026-09-15T02:04:33.585397+00:00",
+  "command": [
+    "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/runs/20260915T020154Z_z_distribution/plot_executed.py"
+  ],
+  "code": {
+    "git_revision": "49de987c63d34f6024b390078b0d5dcad991d020",
+    "plot_source_sha256": "3399fc90d6c315d6cbb8641eaa12a249d9b067740cf8178422fed1562d0bd138",
+    "metrics_source_sha256": "5a9c9c7ede5ec1855d23340715ab6f86c317bae2002ecd8d302fa1b73ab64904"
+  },
+  "resolved_configuration": {
+    "model": "Qwen/Qwen3.5-4B",
+    "lsh_dim": 5,
+    "gamma": 0.1,
+    "center_samples": 50,
+    "seed": 42,
+    "datasets": [
+      "humaneval",
+      "mbpp"
+    ],
+    "negative_class": "paired_unwatermarked",
+    "scope": "extracted_program",
+    "exclude_unscoreable_per_class": true,
+    "distribution": "exact probability mass at each observed score; within-class normalization",
+    "plot": "two score categories with side-by-side watermarked and control bars",
+    "bar_labels": "percentage and count / scoreable class size",
+    "smoothing": "none",
+    "std_ddof": 0,
+    "mean_std": "across task scores, not across seeds",
+    "figure_inches": [
+      7.2,
+      6.6
+    ],
+    "dpi": 300,
+    "y_axis_percent_limits": [
+      0,
+      110
+    ]
+  },
+  "source_verification": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/runs/20260914T225431Z_final_summary/manifest.json",
+  "source_verification_sha256": "8ee6dbd12e3043771961522949fb6452b4024ebcdd07827d0c9940dc5a714d46",
+  "source_results": [
+    {
+      "encoder": "google/embeddinggemma-300m",
+      "dataset": "humaneval",
+      "input": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/humaneval/seqmark_humaneval_port_cached_qwen3.5-4b.json",
+      "input_sha256": "95a9d2aff27d9f87a9abb1bbf3b1b7b096d6b1d6990abe28e5cecc64b4278881",
+      "verdict_provenance": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/humaneval/pass1_seqmark_port_cached_qwen3.5-4b_humaneval.provenance.json"
+    },
+    {
+      "encoder": "google/embeddinggemma-300m",
+      "dataset": "mbpp",
+      "input": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/mbpp/seqmark_mbpp_port_cached_qwen3.5-4b.json",
+      "input_sha256": "8c616975a0a2483615958b40292cdb2ef921028e375685b7e502d439ae1b1bcf",
+      "verdict_provenance": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/mbpp/pass1_seqmark_port_cached_qwen3.5-4b_mbpp.provenance.json"
+    },
+    {
+      "encoder": "AbeHou/SemStamp-c4-sbert",
+      "dataset": "humaneval",
+      "input": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/humaneval/seqmark_humaneval_port_sbert_cached_qwen3.5-4b.json",
+      "input_sha256": "4aed1ffea44e8153a3ab5d8f9ef809a55df5b890a75e7d695f5894e08cb52d1b",
+      "verdict_provenance": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/humaneval/pass1_seqmark_port_sbert_cached_qwen3.5-4b_humaneval.provenance.json"
+    },
+    {
+      "encoder": "AbeHou/SemStamp-c4-sbert",
+      "dataset": "mbpp",
+      "input": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/mbpp/seqmark_mbpp_port_sbert_cached_qwen3.5-4b.json",
+      "input_sha256": "d62ffd25fb5e0a98ac5df324d5fb0fc825ee666877b2260c93049037748dd40c",
+      "verdict_provenance": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/mbpp/pass1_seqmark_port_sbert_cached_qwen3.5-4b_mbpp.provenance.json"
+    }
+  ],
+  "environment": {
+    "host": "n1",
+    "python": "3.12.13",
+    "matplotlib": "3.11.0",
+    "numpy": "2.5.1"
+  },
+  "artifacts": [
+    {
+      "path": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/runs/20260915T020154Z_z_distribution/seqmark_z_distribution.png",
+      "sha256": "ea28d828ce938c2e2b696797482b49e96abe1aee8b3995298512a104dcbee42d",
+      "published_path": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/figures/seqmark_z_distribution.png"
+    },
+    {
+      "path": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/runs/20260915T020154Z_z_distribution/seqmark_z_distribution.pdf",
+      "sha256": "824b0c8b69aeefff2f14ef0a7986ac69573b21e49725399b79114a74d88e6094",
+      "published_path": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/figures/seqmark_z_distribution.pdf"
+    },
+    {
+      "path": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/runs/20260915T020154Z_z_distribution/seqmark_z_distribution.csv",
+      "sha256": "5b1e9f71c76120ff20e303845fce708b928e5b78444d8db418b1e32a512c6d14",
+      "published_path": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/figures/seqmark_z_distribution.csv"
+    }
+  ]
+}

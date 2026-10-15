@@ -23,10 +23,10 @@ import os
 import sys
 from pathlib import Path
 
-# Default: MarkLLM cloned next to the pilot_study checkout; override with the
+# Default: MarkLLM cloned next to this repository's checkout; override with the
 # MARKLLM_ROOT environment variable.
 MARKLLM_ROOT = Path(os.environ.get("MARKLLM_ROOT", Path(__file__).resolve().parents[4] / "MarkLLM"))
-PILOT_SRC = Path(__file__).resolve().parents[2]
+REPO_SRC = Path(__file__).resolve().parents[2]
 
 if not MARKLLM_ROOT.is_dir():
     raise FileNotFoundError(
@@ -40,7 +40,7 @@ if str(MARKLLM_ROOT) not in sys.path:
 
 
 def load_pilot_utils():
-    spec = importlib.util.spec_from_file_location("pilot_utils", PILOT_SRC / "utils.py")
+    spec = importlib.util.spec_from_file_location("pilot_utils", REPO_SRC / "utils.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -53,8 +53,8 @@ def _register_pilot_package(name: str):
         return sys.modules[name]
     spec = importlib.util.spec_from_file_location(
         name,
-        PILOT_SRC / name / "__init__.py",
-        submodule_search_locations=[str(PILOT_SRC / name)],
+        REPO_SRC / name / "__init__.py",
+        submodule_search_locations=[str(REPO_SRC / name)],
     )
     mod = importlib.util.module_from_spec(spec)
     sys.modules[name] = mod

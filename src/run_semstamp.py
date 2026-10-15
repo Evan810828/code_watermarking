@@ -6,7 +6,7 @@ detector can also score *unwatermarked* completions of the same tasks from an
 earlier KGW run (inline when --control-file exists, or standalone via
 --mode detect-control). Checkpoints after every task and resumes.
 
-Three-step pattern (CLAUDE.md): dataloader module -> watermark impl (wm/) ->
+Three-step pattern (IMPLEMENTATION.md): dataloader module -> watermark impl (wm/) ->
 global inference helpers (utils).
 
 Implementations (both default to the line segmenter; --segmenter nltk gives

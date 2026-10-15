@@ -4,7 +4,7 @@ implementations: out/<method>/<dataset>[/markllm]/), chat-template plumbing,
 code extraction, common CLI args, model loading, and the non-experiment CLI
 utilities (shard merging, aggregate stats).
 
-Inference follows a fixed three-step pattern (see CLAUDE.md): pick a
+Inference follows a fixed three-step pattern (see IMPLEMENTATION.md): pick a
 dataloader module, pick a watermark implementation, then drive generation
 with the global helpers here (chat_text/task_chat_text, extract_code,
 add_common_args, load_hf_model). Never bake prompts or system messages into
@@ -23,9 +23,9 @@ import re
 import time
 from pathlib import Path
 
-PILOT_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = PILOT_DIR / "data"
-OUT_DIR = PILOT_DIR / "out"
+REPO_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = REPO_DIR / "data"
+OUT_DIR = REPO_DIR / "out"
 
 SIMILARITY_OUT = OUT_DIR / "similarity"
 
@@ -631,7 +631,7 @@ def rescore_meta(meta: dict, src, results: list) -> dict:
 
 def rescore_path(src) -> Path:
     """Where a rescored copy goes. Never overwrites the original — result JSONs
-    are append-only evidence (CLAUDE.md)."""
+    are append-only evidence (IMPLEMENTATION.md)."""
     src = Path(src)
     return src.with_name(src.stem + ".rescored.json")
 
@@ -790,23 +790,119 @@ def summarize_method(method: str = "codewm", impl: str | None = None) -> None:
               f"   (n_pos={s['n_pos']}, n_neg={s['n_neg']})")
 
 
+SEQMARK_EMBEDDERS = ("google/embeddinggemma-300m", "AbeHou/SemStamp-c4-sbert")
+SEQMARK_DATASETS = ("humaneval", "mbpp")
+
+
+def seqmark_impl_tag(embedder: str, detector_center: str | None = None) -> str:
+    tag = ("port" if embedder == SEQMARK_EMBEDDERS[0] else
+           "port_sbert" if embedder == SEQMARK_EMBEDDERS[1] else "port_" + model_tag(embedder))
+    return tag + "_cached" if detector_center == "generation_cache" else tag
+
+
+def summarize_seqmark(tag: str = "qwen3.5-4b", write_readme: bool = False,
+                      datasets=None, embedders=None,
+                      detector_center: str = "generation_cache") -> list[str]:
+    """Render the existing Results schema from complete, paired SeqMark runs.
+
+    Recompute quality from the matching per-task eval_pass1 verdicts. Refuse
+    partial splits, missing classes, stale evaluations, or smoke artifacts.
+    --write-readme changes only SeqMark rows in the first Results table.
+    """
+    import dataloader
+
+    rows = []
+    selected = [(e, n) for e in (embedders or SEQMARK_EMBEDDERS)
+                for n in (datasets or SEQMARK_DATASETS)]
+    for embedder, name in selected:
+        impl_tag = seqmark_impl_tag(embedder, detector_center)
+        path = OUT_DIR / "seqmark" / name / f"seqmark_{name}_{impl_tag}_{tag}.json"
+        verdict_path = path.parent / f"pass1_seqmark_{impl_tag}_{tag}_{name}.json"
+        if not path.exists() or not verdict_path.exists():
+            if write_readme:
+                raise ValueError(f"complete generation and evaluation required: {path}, {verdict_path}")
+            continue
+        data = json.loads(path.read_text())
+        meta, results = data["meta"], data["results"]
+        if meta.get("operational_smoke") or meta.get("status") != "completed":
+            raise ValueError(f"not a completed scientific run: {path}")
+        if meta.get("detection_scope") != DETECTION_SCOPE:
+            raise ValueError(f"incompatible detection scope: {path}")
+        if meta["watermark"]["embedder"] != embedder:
+            raise ValueError(f"wrong encoder in result file: {path}")
+        if detector_center == "generation_cache" and meta["watermark"].get("detector_center") != detector_center:
+            raise ValueError(f"wrong detector centre policy: {path}")
+        ds = dataloader.get(name)
+        expected = [ds.task_id(t) for t in ds.load_tasks()]
+        actual = [r["task_id"] for r in results]
+        verdicts = json.loads(verdict_path.read_text())
+        if actual != expected or [r["task_id"] for r in verdicts] != expected:
+            raise ValueError(f"incomplete, duplicated, or misaligned task IDs: {path}")
+        if any("unwatermarked" not in r for r in results):
+            raise ValueError(f"missing paired negative branch: {path}")
+        # eval_pass1 predates input fingerprints. The finalizer adds one to a
+        # separate evaluation record so stale verdicts cannot enter the table.
+        provenance = verdict_path.with_suffix(".provenance.json")
+        import hashlib
+        if not provenance.exists():
+            raise ValueError(f"missing evaluation provenance: {provenance}")
+        identity = json.loads(provenance.read_text())
+        if identity["input_sha256"] != hashlib.sha256(path.read_bytes()).hexdigest():
+            raise ValueError(f"evaluation belongs to different completions: {verdict_path}")
+        if identity["verdict_sha256"] != hashlib.sha256(verdict_path.read_bytes()).hexdigest():
+            raise ValueError(f"evaluation verdicts changed: {verdict_path}")
+        summary = detection_summary(results)
+        quality = {b: sum(bool(v[b]["passed"]) for v in verdicts) / len(verdicts)
+                   for b in ("watermarked", "unwatermarked")}
+        f3 = lambda v: "n/a" if v is None else f"{v:.3f}"
+        f2 = lambda v: "n/a" if v is None else f"{v:+.2f}"
+        n, missed = len(results), summary["n_unscoreable_watermarked"]
+        impl = "port (SBERT)" if embedder == "AbeHou/SemStamp-c4-sbert" else "port (" + embedder.split("/")[-1] + ")"
+        rows.append(
+            f"| SeqMark | {impl} | {name} | {n} | {summary['n_pos']} | "
+            f"{missed} ({missed / n:.0%}) | {f3(summary['auroc'])} | "
+            f"{fmt_pct(summary['tpr@1pct'])} | {fmt_pct(summary['tpr@5pct'])} | "
+            f"{f2(summary['mean_z_watermarked'])} | {f2(summary['mean_z_unwatermarked'])} | "
+            f"{fmt_pct(quality['watermarked'])} | {fmt_pct(quality['unwatermarked'])} |"
+        )
+    print("\n".join(rows))
+    if write_readme:
+        readme = OUT_DIR / "README.md"
+        text = readme.read_text()
+        start = text.index("| method | impl | dataset | n | scored |", text.index("## Results"))
+        end = text.index("\n\n", start)
+        keys = {tuple(row.split("|")[1:4]) for row in rows}
+        table = [line for line in text[start:end].splitlines()
+                 if tuple(line.split("|")[1:4]) not in keys]
+        updated = text[:start] + "\n".join(table + rows) + text[end:]
+        temporary = readme.with_suffix(".md.tmp")
+        temporary.write_text(updated)
+        temporary.replace(readme)
+        print(f"Updated {readme}")
+    return rows
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument(
         "command",
         choices=["merge-semstamp", "analyze-semstamp", "merge-semstamp-lcb", "summarize-lcb",
-                 "summarize", "summarize-methods"],
+                 "summarize", "summarize-methods", "summarize-seqmark"],
     )
     ap.add_argument("--dataset", choices=["humaneval", "mbpp"], default=None)
     ap.add_argument("--num-shards", type=int, default=None)
     ap.add_argument("--model-tag", default="qwen3.5-4b")
     ap.add_argument("--method", default="all",
-                    choices=["all", "kgw", "semstamp", "sweet", "codewm"],
+                    choices=["all", "kgw", "semstamp", "sweet", "codewm", "seqmark"],
                     help="summarize-methods: which method's runs to table")
     ap.add_argument("--impl", choices=["pilot", "official", "port", "repro"], default=None,
                     help="merge-semstamp-lcb: current-naming shards for this impl "
                     "(omit for historical pre-reorg files). summarize-codewm: "
                     "restrict to port or repro runs")
+    ap.add_argument("--write-readme", action="store_true",
+                    help="summarize-seqmark: write both encoders on complete HumanEval/MBPP splits")
+    ap.add_argument("--detector-center", choices=("generation_cache", "independent_resample"),
+                    default="generation_cache", help="SeqMark result family; legacy runs used independent_resample")
     args = ap.parse_args()
     if args.command == "merge-semstamp":
         merge_semstamp_shards(args.dataset, args.num_shards or 4, args.model_tag)
@@ -817,9 +913,16 @@ if __name__ == "__main__":
     elif args.command == "summarize":
         summarize_all(args.model_tag)
     elif args.command == "summarize-methods":
-        for m in (["kgw", "semstamp", "sweet", "codewm"] if args.method == "all"
+        for m in (["kgw", "semstamp", "sweet", "codewm", "seqmark"] if args.method == "all"
                   else [args.method]):
             print(f"\n########## {m}")
-            summarize_method(m, args.impl if args.impl in ("port", "repro") else None)
+            if m == "seqmark":
+                summarize_seqmark(args.model_tag, detector_center=args.detector_center)
+            else:
+                summarize_method(m, args.impl if args.impl in ("port", "repro") else None)
+    elif args.command == "summarize-seqmark":
+        summarize_seqmark(args.model_tag, args.write_readme,
+                          datasets=[args.dataset] if args.dataset else None,
+                          detector_center=args.detector_center)
     else:
         summarize_lcb(args.model_tag)

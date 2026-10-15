@@ -8,7 +8,7 @@ resumes from an existing output file. Mirrors run_sweet.py; detection here
 needs only the small trained CodeModel (never the teacher LLM), and — as in
 the upstream evaluator — scores the completion token ids alone.
 
-Three-step pattern (CLAUDE.md): dataloader module -> watermark impl (wm/) ->
+Three-step pattern (IMPLEMENTATION.md): dataloader module -> watermark impl (wm/) ->
 global inference helpers (utils).
 
 Defaults follow the upstream repo (run.sh / main.py): delta 2.0, gamma 0.5

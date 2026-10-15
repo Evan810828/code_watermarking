@@ -1,0 +1,217 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.8in,landscape]{geometry}
+\usepackage{amsmath,amssymb,booktabs,longtable,graphicx,hyperref}
+\title{Watermarking Baseline Measurements on Code Generation}
+\author{}
+\date{}
+\begin{document}
+\maketitle
+
+\section{Research question and measured scope}
+
+The study measures the detection and functional correctness of existing
+watermarking methods on HumanEval, the MBPP test split, and the LiveCodeBench
+release-v1 code-generation test split. The methods are KGW, SemStamp, SWEET,
+CodeWM, and SeqMark. The tables preserve existing measurements. They do not
+establish a new watermark method or a cross-dataset winner.
+
+The full splits contain 164, 500, and 400 tasks, respectively. Several CodeWM
+runs cover only subsets. SeqMark has complete HumanEval and MBPP evaluations
+for two encoders; its LiveCodeBench execution was cancelled and contributes
+no complete benchmark result. Partial and superseded executions remain
+available as historical evidence.
+
+\section{Methods and experimental conventions}
+
+KGW biases a context-seeded token green list. SWEET applies a green-list bias
+at positions exceeding an entropy threshold. SemStamp rejection-samples
+line segments using keyed regions of sentence embeddings. CodeWM learns a
+context-dependent token pairing and an embedding switch. SeqMark applies
+mean-centred semantic rejection sampling to the complete extracted program,
+which is treated as one sequence. The SeqMark detector reuses the saved
+generation centre for both watermarked and unwatermarked programs.
+
+The shared model in the main comparison is Qwen3.5-4B. KGW, SemStamp, SWEET,
+and the CodeWM chat runs use temperature $0.7$, nucleus probability $0.8$,
+top-$k=20$, a 2000-token generation budget, and random seed 42. Thinking is
+disabled. Dataset-level prompts request Python without comments or docstrings.
+KGW and SWEET use green fraction $0.5$ and bias $8$. SemStamp uses line
+segmentation. CodeWM is measured at biases $2$ and $8$ with switch threshold
+$0.7$ in the Qwen comparison. Its original-paper reproduction is separate.
+
+SeqMark uses temperature $1.2$ for centre samples, candidate programs, and
+paired controls, unrestricted nucleus sampling, disabled top-$k$, repetition
+penalty $1.05$, 50 centre samples, and at most 50 rejection trials. A search
+over 100 MBPP training tasks selected five hash dimensions and green fraction
+$0.1$. The same configuration applies to Gemma and SBERT on both test splits.
+Those training tasks are disjoint from the MBPP test split; HumanEval does
+not select the parameters. Gemma denotes the embeddinggemma-300m encoder;
+SBERT denotes the SemStamp sentence encoder. Their native tokenization,
+pooling, and truncation remain part of the encoder comparison.
+
+These sampling and implementation differences are experimental conditions,
+so the five-method table is not a controlled comparison varying only the
+watermark algorithm. Every run uses one recorded generation seed; the tables
+do not estimate variation over independent seeds.
+
+\section{Evaluation protocol}
+
+Detection receives the extracted Python program. The positive class contains
+watermarked programs; the negative class contains paired unwatermarked model
+generations. Extraction failures are unscoreable. A method can also return a
+null detector score after successful extraction, so scored and unscoreable
+counts need not sum to the task count.
+
+For target false-positive rate $q$, the reported operating point is
+\[
+\operatorname{TPR}_{q}=\max_{t:\operatorname{FPR}(t)\le q}
+\operatorname{TPR}(t),\qquad \text{positive if } z\ge t.
+\]
+This definition selects the best attainable deterministic threshold under
+the false-positive constraint. Equal scores remain together. The calculation
+uses no interpolation or randomized tie splitting. Positive and negative
+rates use their respective scoreable-class denominators. AUROC denotes the
+area under the receiver operating characteristic curve.
+
+Functional evaluation uses the benchmark's saved code extraction and retains
+the task cohort independently of detector scoreability. The chat-protocol
+pass@1 values use one generated program per task. LiveCodeBench evaluation
+uses the recorded cap of 20 tests per task, with inputs larger than 10 MB
+excluded during test preparation. The original-paper CodeWM protocol instead
+estimates pass@1 from 20 completions and detects the first valid completion.
+
+\section{Measured results}
+
+Table~\ref{tab:baseline} preserves the complete primary table, including
+capped cells. For example, the CodeWM bias-$2$ LiveCodeBench result covers
+104 of 400 tasks; it is not a full-split estimate. The bias-$8$ CodeWM cells
+are also capped. The paired quality baseline belongs to each row's own task
+cohort and generation configuration.
+
+SeqMark has a discrete per-program score. Its accepted-score group may exceed
+a low false-positive budget, causing zero attainable true-positive rate at
+that budget even when AUROC is high. The report separately retains the
+training-selected classification threshold, its precision and recall, and
+the full empirical receiver operating characteristic. Those quantities do
+not replace the deterministic fixed-FPR columns.
+
+\clearpage
+\small
+\setlength{\LTcapwidth}{\textwidth}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{lllrrrrrrrrrr}
+\caption{Qwen3.5-4B baseline measurements. HE is HumanEval; LCB is LiveCodeBench.
+$n$ is the evaluated task cohort, Scored is the watermarked score count,
+and Unsc. counts extraction failures. TPR$_1$ and TPR$_5$ use 1\% and 5\%
+false-positive budgets. P@1 is pass@1; $+$ and $-$ denote watermarked and
+paired unwatermarked programs. Rows use one generation seed.}\label{tab:baseline}\\
+\toprule
+Method & Impl. & Data & $n$ & Scored & Unsc. & AUROC & TPR$_1$ & TPR$_5$ &
+$\bar z^+$ & $\bar z^-$ & P@1$^+$ & P@1$^-$ \\
+\midrule
+KGW & pilot & HE & 164 & 147 & 17 & .969 & 91.8\% & 93.2\% & 30.92 & -0.82 & 0.6\% & 76.2\% \\
+KGW & pilot & MBPP & 500 & 257 & 243 & 1.000 & 99.6\% & 100.0\% & 34.15 & -0.90 & 0.2\% & 54.4\% \\
+KGW & pilot & LCB & 400 & 287 & 113 & .675 & 41.8\% & 52.3\% & 8.38 & -0.23 & 1.0\% & 43.8\% \\
+KGW & official & HE & 164 & 164 & 0 & .912 & 73.8\% & 79.3\% & 3.21 & -0.15 & 9.1\% & 76.2\% \\
+KGW & official & MBPP & 500 & 500 & 0 & .991 & 93.8\% & 95.6\% & 4.51 & -0.13 & 4.2\% & 54.4\% \\
+KGW & official & LCB & 400 & 387 & 13 & .996 & 94.1\% & 97.4\% & 6.86 & -0.73 & 0.8\% & 44.3\% \\
+\midrule
+SWEET & port & HE & 164 & 164 & 0 & .765 & 22.6\% & 43.3\% & 1.88 & 0.44 & 63.4\% & 79.3\% \\
+SWEET & port & MBPP & 500 & 500 & 0 & .828 & 36.2\% & 51.6\% & 3.23 & 0.51 & 44.8\% & 59.2\% \\
+SWEET & port & LCB & 400 & 373 & 27 & .870 & 63.3\% & 70.8\% & 11.43 & 1.36 & 27.0\% & 42.5\% \\
+\midrule
+SemStamp & pilot & HE & 164 & 164 & 0 & .546 & 3.7\% & 8.5\% & 0.50 & 0.24 & 73.2\% & 76.2\% \\
+SemStamp & pilot & MBPP & 500 & 499 & 0 & .560 & 2.6\% & 10.8\% & 0.57 & 0.13 & 57.0\% & 54.4\% \\
+SemStamp & pilot & LCB & 400 & 386 & 14 & .709 & 28.0\% & 38.1\% & 3.40 & 0.65 & 43.5\% & 43.8\% \\
+SemStamp & official & HE & 164 & 164 & 0 & .545 & 1.2\% & 4.9\% & 0.54 & 0.35 & 76.2\% & 76.2\% \\
+SemStamp & official & MBPP & 500 & 500 & 0 & .512 & 2.0\% & 4.8\% & 0.45 & 0.41 & 56.0\% & 54.4\% \\
+SemStamp & official & LCB & 400 & 392 & 8 & .651 & 15.6\% & 24.7\% & 1.87 & 0.76 & 43.8\% & 43.8\% \\
+\midrule
+CodeWM & port, $\delta=2$ & HE & 164 & 164 & 0 & .577 & 1.2\% & 6.1\% & -0.01 & -0.28 & 73.8\% & 76.2\% \\
+CodeWM & port, $\delta=2$ & MBPP & 500 & 500 & 0 & .620 & 4.2\% & 11.2\% & 0.01 & -0.39 & 55.2\% & 56.8\% \\
+CodeWM & port, $\delta=2$ & LCB & 104 & 96 & 8 & .897 & 42.7\% & 56.2\% & 3.06 & -1.09 & 41.3\% & 45.2\% \\
+CodeWM & port, $\delta=8$ & HE & 88 & 88 & 0 & .797 & 15.9\% & 39.8\% & 3.32 & -0.10 & 50.0\% & 84.1\% \\
+CodeWM & port, $\delta=8$ & MBPP & 96 & 96 & 0 & .889 & 55.2\% & 61.5\% & 4.28 & -0.35 & 20.8\% & 68.8\% \\
+CodeWM & port, $\delta=8$ & LCB & 48 & 45 & 3 & .967 & 75.6\% & 88.9\% & 12.59 & -1.07 & 10.4\% & 47.9\% \\
+\midrule
+SeqMark & Gemma & HE & 164 & 164 & 0 & .933 & 0.0\% & 91.5\% & 2.72 & -0.17 & 40.9\% & 48.8\% \\
+SeqMark & Gemma & MBPP & 500 & 500 & 0 & .929 & 0.0\% & 0.0\% & 2.83 & -0.03 & 29.6\% & 35.2\% \\
+SeqMark & SBERT & HE & 164 & 164 & 0 & .905 & 0.0\% & 0.0\% & 2.63 & -0.07 & 39.6\% & 48.8\% \\
+SeqMark & SBERT & MBPP & 500 & 500 & 0 & .909 & 0.0\% & 0.0\% & 2.73 & -0.00 & 29.2\% & 35.2\% \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\section{Original-paper CodeWM reproduction}
+
+The completion-prompt reproduction uses DeepSeek-Coder-1.3B-Instruct and
+OpenCoder-1.5B-Instruct. The always-open switch ($-10$) and gated switch
+($0.7$) remain separate settings. Table~\ref{tab:repro} uses paired
+unwatermarked detection negatives. The historical human-reference detection
+comparison is retained separately in the detailed repository report.
+The historical training corpus used the same MBPP test prompts as upstream;
+this convention differs from the disjoint chat-protocol training corpus.
+
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{lllrrrrrrrr}
+\caption{CodeWM completion-prompt reproduction. All rows use the full named
+benchmark split. Quality uses the 20-sample estimator, and detection uses
+the first valid completion. TPR columns and branch signs follow
+Table~\ref{tab:baseline}.}\label{tab:repro}\\
+\toprule
+Model & Switch & Data & $n$ & AUROC & TPR$_1$ & TPR$_5$ & $\bar z^+$ &
+$\bar z^-$ & P@1$^+$ & P@1$^-$ \\
+\midrule
+DeepSeek & $-10$ & HE & 164 & .690 & 3.0\% & 20.1\% & 0.52 & -0.41 & 53.0\% & 58.0\% \\
+DeepSeek & $-10$ & MBPP & 500 & .708 & 7.0\% & 22.0\% & 0.51 & -0.48 & 34.5\% & 39.4\% \\
+OpenCoder & $-10$ & HE & 164 & .655 & 3.0\% & 16.5\% & 1.31 & 0.32 & 59.6\% & 67.0\% \\
+OpenCoder & $-10$ & MBPP & 500 & .732 & 9.4\% & 25.8\% & 1.12 & 0.17 & 39.8\% & 42.6\% \\
+DeepSeek & $0.7$ & HE & 164 & .727 & 4.9\% & 19.5\% & 0.70 & -0.11 & 56.0\% & 58.3\% \\
+DeepSeek & $0.7$ & MBPP & 500 & .683 & 8.4\% & 21.0\% & 0.78 & 0.10 & 37.7\% & 39.4\% \\
+OpenCoder & $0.7$ & HE & 164 & .691 & 0.6\% & 7.9\% & 0.92 & 0.36 & 64.7\% & 66.8\% \\
+OpenCoder & $0.7$ & MBPP & 500 & .689 & 2.8\% & 7.0\% & 0.96 & 0.33 & 42.6\% & 43.5\% \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\section{Limitations}
+
+The measurements retain their original generation settings and task cohorts.
+Capped CodeWM cells and cancelled SeqMark LiveCodeBench executions do not
+supply missing full-split measurements. Scoreable-subset detection cannot be
+interpreted without the extraction and null-score counts. Different prompting,
+quality estimators, sampling, and model families prevent pooling the
+original-paper reproduction, the first round, and the main comparison.
+No new benchmark execution or method-selection criterion is introduced by
+this report.
+
+\appendix
+\section{Evidence and reproducibility}
+
+The complete Markdown report is \texttt{out/README.md}. It preserves parameter
+searches, threshold classification, figures, historical comparisons, and
+superseded values. \texttt{results/experiments.csv} indexes generation artifacts;
+\texttt{results/inventory.json} maps original paths to archives and file hashes.
+The archives preserve original bytes, including per-task verdicts and recorded
+SeqMark manifests. Missing historical provenance remains unavailable.
+
+\begin{verbatim}
+python3 src/result_archive.py verify
+python3 src/result_archive.py restore
+cd src
+python3 utils.py summarize-methods
+python3 utils.py summarize-seqmark
+\end{verbatim}
+
+The original SemStamp LiveCodeBench control quality cells reported $44.3\%$.
+The saved control texts match all 400 KGW pilot controls, whose evaluator
+records 175 passes ($43.75\%$). Table~\ref{tab:baseline} therefore reports
+$43.8\%$; the correction record retains the original display and source hashes.
+
+Historical baseline comparisons and conventions are retained in the detailed
+Markdown report and the evidence archives. The CodeWM implementation and
+completion-prompt reproduction protocol remain in the source tree.
+All documents are maintained locally.
+
+\end{document}

@@ -1,0 +1,13 @@
+dataset,encoder,threshold,false_positive_rate,true_positive_rate,false_positives,true_positives,scoreable_watermarked,scoreable_unwatermarked
+humaneval,google/embeddinggemma-300m,inf,0.0,0.0,0,0,164,164
+humaneval,google/embeddinggemma-300m,2.9999999999999996,0.04878048780487805,0.9146341463414634,8,150,164,164
+humaneval,google/embeddinggemma-300m,-0.3333333333333333,1.0,1.0,164,164,164,164
+mbpp,google/embeddinggemma-300m,inf,0.0,0.0,0,0,500,493
+mbpp,google/embeddinggemma-300m,2.9999999999999996,0.09127789046653144,0.95,45,475,500,493
+mbpp,google/embeddinggemma-300m,-0.3333333333333333,1.0,1.0,493,500,500,493
+humaneval,AbeHou/SemStamp-c4-sbert,inf,0.0,0.0,0,0,164,164
+humaneval,AbeHou/SemStamp-c4-sbert,2.9999999999999996,0.07926829268292683,0.8902439024390244,13,146,164,164
+humaneval,AbeHou/SemStamp-c4-sbert,-0.3333333333333333,1.0,1.0,164,164,164,164
+mbpp,AbeHou/SemStamp-c4-sbert,inf,0.0,0.0,0,0,500,493
+mbpp,AbeHou/SemStamp-c4-sbert,2.9999999999999996,0.09939148073022312,0.918,49,459,500,493
+mbpp,AbeHou/SemStamp-c4-sbert,-0.3333333333333333,1.0,1.0,493,500,500,493

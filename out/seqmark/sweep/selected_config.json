@@ -1,0 +1,749 @@
+{
+  "selection_rule": "maximize mean F1 across both encoders, using the released max-TPR/FPR threshold rule; ties: mean AUROC, fewer mean trials, smaller LSH dimension, smaller gamma; no test-split tuning",
+  "contract": {
+    "dataset": "mbpp_train",
+    "data_fingerprint": "d4b37bf5a36de3cb71a36e63fefeda6e5180088b7e5ca4a699280f26c371c6b2",
+    "task_ids": [
+      604,
+      613,
+      614,
+      616,
+      617,
+      623,
+      624,
+      629,
+      634,
+      636,
+      637,
+      641,
+      645,
+      648,
+      650,
+      652,
+      653,
+      658,
+      664,
+      672,
+      674,
+      680,
+      682,
+      684,
+      688,
+      699,
+      702,
+      708,
+      709,
+      711,
+      712,
+      713,
+      715,
+      717,
+      718,
+      720,
+      726,
+      736,
+      737,
+      738,
+      739,
+      741,
+      743,
+      749,
+      751,
+      762,
+      767,
+      773,
+      775,
+      777,
+      782,
+      784,
+      786,
+      787,
+      790,
+      794,
+      795,
+      803,
+      806,
+      815,
+      817,
+      830,
+      833,
+      835,
+      836,
+      837,
+      856,
+      859,
+      874,
+      875,
+      880,
+      882,
+      883,
+      886,
+      888,
+      892,
+      896,
+      902,
+      903,
+      905,
+      909,
+      910,
+      917,
+      923,
+      928,
+      929,
+      933,
+      934,
+      940,
+      945,
+      947,
+      948,
+      955,
+      957,
+      959,
+      961,
+      962,
+      965,
+      967,
+      970
+    ],
+    "watermark": {
+      "algorithm": "SeqMark",
+      "implementation": "port (complete-program sequence)",
+      "upstream_revision": "3c1ae8f9988e025e3d564839817a15a85bdcf0ff",
+      "segmenter": "program",
+      "center_extraction": "extracted_program_else_empty_string; no filtering",
+      "encoder_batch_size": 1,
+      "region_count_rule": "int(gamma * 2**lsh_dim), as in reference",
+      "classification_flag": "green_region_membership",
+      "embedder": "google/embeddinggemma-300m",
+      "gamma": 0.25,
+      "lsh_dim": 3,
+      "hash_key": 12345,
+      "center_samples": 50,
+      "center_temperature": 1.2,
+      "max_trials": 50,
+      "candidate_batch_size": 1,
+      "detector_center": "generation_cache",
+      "z_threshold": 3.0,
+      "mask_device": "cuda"
+    },
+    "source_fingerprint": "952a90f4b7f79f76f05f07fb62aeea349b2008ba724fec0e312c683aacb3362d",
+    "model": "Qwen/Qwen3.5-4B",
+    "model_path": "/scratch.global/wu001810/.cache/huggingface/hub/models--Qwen--Qwen3.5-4B/snapshots/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+    "embedder_paths": {
+      "google/embeddinggemma-300m": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/cache/huggingface/models--google--embeddinggemma-300m/snapshots/57c266a740f537b4dc058e1b0cda161fd15afa75",
+      "AbeHou/SemStamp-c4-sbert": "/scratch.global/wu001810/.cache/huggingface/hub/models--AbeHou--SemStamp-c4-sbert/snapshots/a77dce8530e100ac1101981e4be390546c1cb282"
+    },
+    "generation": {
+      "backend": "vllm",
+      "max_new_tokens": 2000,
+      "temperature": 1.2,
+      "top_p": 1.0,
+      "top_k": -1,
+      "repetition_penalty": 1.05,
+      "seed": 42
+    },
+    "grid": {
+      "lsh_dim": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "gamma": [
+        0.1,
+        0.25,
+        0.5,
+        0.75
+      ]
+    },
+    "selection_rule": "maximize mean F1 across both encoders, using the released max-TPR/FPR threshold rule; ties: mean AUROC, fewer mean trials, smaller LSH dimension, smaller gamma; no test-split tuning",
+    "candidate_pool": "50 ordered independent n=1 requests, batched by vLLM; first accepted or last fallback",
+    "num_shards": 4,
+    "status": "completed"
+  },
+  "sources": [
+    {
+      "path": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/sweep/sweep.shard0of4.json",
+      "sha256": "598f134ccc3700d59c5649a4dd2ebabab5411da7f3c7695c1348227234567466",
+      "manifest": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/runs/20260914T183904Z_6c9fde86/manifest.json"
+    },
+    {
+      "path": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/sweep/sweep.shard1of4.json",
+      "sha256": "fbe230a1f81dc001cb083c449ba847b98dc322c42256dce55a0e701f2491fbc6",
+      "manifest": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/runs/20260914T183911Z_c7a9716a/manifest.json"
+    },
+    {
+      "path": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/sweep/sweep.shard2of4.json",
+      "sha256": "a3d36fea085ad095d97ea19184e9a527ef6a7b6a2864efc03fea1fae08fd9b01",
+      "manifest": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/runs/20260914T183921Z_85cd2600/manifest.json"
+    },
+    {
+      "path": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/sweep/sweep.shard3of4.json",
+      "sha256": "9dfca8b21c76bbdcbc926d8a18d9de684d880897f3f085bf8bbe9b4b6f58d9d8",
+      "manifest": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/runs/20260914T183945Z_dc0244a9/manifest.json"
+    }
+  ],
+  "selected": {
+    "lsh_dim": 5,
+    "gamma": 0.1,
+    "encoders": {
+      "google/embeddinggemma-300m": {
+        "threshold": 2.9999999999999996,
+        "precision": 0.912621359223301,
+        "recall": 0.94,
+        "f1": 0.9261083743842364,
+        "fpr": 0.09090909090909091,
+        "auroc": 0.9245454545454544,
+        "n_pos": 100,
+        "n_neg": 99,
+        "mean_trials": 15.09,
+        "fallback_count": 6
+      },
+      "AbeHou/SemStamp-c4-sbert": {
+        "threshold": 2.9999999999999996,
+        "precision": 0.8796296296296297,
+        "recall": 0.95,
+        "f1": 0.9134615384615384,
+        "fpr": 0.13131313131313133,
+        "auroc": 0.9093434343434345,
+        "n_pos": 100,
+        "n_neg": 99,
+        "mean_trials": 14.52,
+        "fallback_count": 5
+      }
+    },
+    "mean_f1": 0.9197849564228875,
+    "mean_auroc": 0.9169444444444445,
+    "mean_trials": 14.805
+  },
+  "all_settings": [
+    {
+      "lsh_dim": 2,
+      "gamma": 0.1,
+      "encoders": {
+        "google/embeddinggemma-300m": {
+          "threshold": -0.3333333333333333,
+          "precision": 0.49746192893401014,
+          "recall": 1.0,
+          "f1": 0.6644067796610169,
+          "fpr": 1.0,
+          "auroc": 0.5,
+          "n_pos": 98,
+          "n_neg": 99,
+          "mean_trials": 50.0,
+          "fallback_count": 100
+        },
+        "AbeHou/SemStamp-c4-sbert": {
+          "threshold": -0.3333333333333333,
+          "precision": 0.49746192893401014,
+          "recall": 1.0,
+          "f1": 0.6644067796610169,
+          "fpr": 1.0,
+          "auroc": 0.5,
+          "n_pos": 98,
+          "n_neg": 99,
+          "mean_trials": 50.0,
+          "fallback_count": 100
+        }
+      },
+      "mean_f1": 0.6644067796610169,
+      "mean_auroc": 0.5,
+      "mean_trials": 50.0
+    },
+    {
+      "lsh_dim": 2,
+      "gamma": 0.25,
+      "encoders": {
+        "google/embeddinggemma-300m": {
+          "threshold": 1.7320508075688774,
+          "precision": 0.7874015748031497,
+          "recall": 1.0,
+          "f1": 0.8810572687224669,
+          "fpr": 0.2727272727272727,
+          "auroc": 0.8636363636363636,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 4.6,
+          "fallback_count": 0
+        },
+        "AbeHou/SemStamp-c4-sbert": {
+          "threshold": 1.7320508075688774,
+          "precision": 0.8403361344537815,
+          "recall": 1.0,
+          "f1": 0.91324200913242,
+          "fpr": 0.1919191919191919,
+          "auroc": 0.904040404040404,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 4.82,
+          "fallback_count": 0
+        }
+      },
+      "mean_f1": 0.8971496389274435,
+      "mean_auroc": 0.8838383838383839,
+      "mean_trials": 4.71
+    },
+    {
+      "lsh_dim": 2,
+      "gamma": 0.5,
+      "encoders": {
+        "google/embeddinggemma-300m": {
+          "threshold": 1.0,
+          "precision": 0.6329113924050633,
+          "recall": 1.0,
+          "f1": 0.7751937984496124,
+          "fpr": 0.5858585858585859,
+          "auroc": 0.7070707070707071,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 1.99,
+          "fallback_count": 0
+        },
+        "AbeHou/SemStamp-c4-sbert": {
+          "threshold": 1.0,
+          "precision": 0.6802721088435374,
+          "recall": 1.0,
+          "f1": 0.8097165991902834,
+          "fpr": 0.47474747474747475,
+          "auroc": 0.7626262626262627,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 2.4,
+          "fallback_count": 0
+        }
+      },
+      "mean_f1": 0.792455198819948,
+      "mean_auroc": 0.7348484848484849,
+      "mean_trials": 2.195
+    },
+    {
+      "lsh_dim": 2,
+      "gamma": 0.75,
+      "encoders": {
+        "google/embeddinggemma-300m": {
+          "threshold": 0.5773502691896258,
+          "precision": 0.5714285714285714,
+          "recall": 1.0,
+          "f1": 0.7272727272727273,
+          "fpr": 0.7575757575757576,
+          "auroc": 0.6212121212121212,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 1.32,
+          "fallback_count": 0
+        },
+        "AbeHou/SemStamp-c4-sbert": {
+          "threshold": 0.5773502691896258,
+          "precision": 0.591715976331361,
+          "recall": 1.0,
+          "f1": 0.7434944237918215,
+          "fpr": 0.696969696969697,
+          "auroc": 0.6515151515151515,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 1.37,
+          "fallback_count": 0
+        }
+      },
+      "mean_f1": 0.7353835755322744,
+      "mean_auroc": 0.6363636363636364,
+      "mean_trials": 1.3450000000000002
+    },
+    {
+      "lsh_dim": 3,
+      "gamma": 0.1,
+      "encoders": {
+        "google/embeddinggemma-300m": {
+          "threshold": -0.3333333333333333,
+          "precision": 0.49746192893401014,
+          "recall": 1.0,
+          "f1": 0.6644067796610169,
+          "fpr": 1.0,
+          "auroc": 0.5,
+          "n_pos": 98,
+          "n_neg": 99,
+          "mean_trials": 50.0,
+          "fallback_count": 100
+        },
+        "AbeHou/SemStamp-c4-sbert": {
+          "threshold": -0.3333333333333333,
+          "precision": 0.49746192893401014,
+          "recall": 1.0,
+          "f1": 0.6644067796610169,
+          "fpr": 1.0,
+          "auroc": 0.5,
+          "n_pos": 98,
+          "n_neg": 99,
+          "mean_trials": 50.0,
+          "fallback_count": 100
+        }
+      },
+      "mean_f1": 0.6644067796610169,
+      "mean_auroc": 0.5,
+      "mean_trials": 50.0
+    },
+    {
+      "lsh_dim": 3,
+      "gamma": 0.25,
+      "encoders": {
+        "google/embeddinggemma-300m": {
+          "threshold": 1.7320508075688774,
+          "precision": 0.8064516129032258,
+          "recall": 1.0,
+          "f1": 0.8928571428571429,
+          "fpr": 0.24242424242424243,
+          "auroc": 0.8787878787878788,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 4.44,
+          "fallback_count": 0
+        },
+        "AbeHou/SemStamp-c4-sbert": {
+          "threshold": 1.7320508075688774,
+          "precision": 0.819672131147541,
+          "recall": 1.0,
+          "f1": 0.9009009009009009,
+          "fpr": 0.2222222222222222,
+          "auroc": 0.8888888888888888,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 5.61,
+          "fallback_count": 0
+        }
+      },
+      "mean_f1": 0.8968790218790219,
+      "mean_auroc": 0.8838383838383839,
+      "mean_trials": 5.025
+    },
+    {
+      "lsh_dim": 3,
+      "gamma": 0.5,
+      "encoders": {
+        "google/embeddinggemma-300m": {
+          "threshold": 1.0,
+          "precision": 0.6666666666666666,
+          "recall": 1.0,
+          "f1": 0.8,
+          "fpr": 0.5050505050505051,
+          "auroc": 0.7474747474747474,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 2.05,
+          "fallback_count": 0
+        },
+        "AbeHou/SemStamp-c4-sbert": {
+          "threshold": 1.0,
+          "precision": 0.684931506849315,
+          "recall": 1.0,
+          "f1": 0.8130081300813008,
+          "fpr": 0.46464646464646464,
+          "auroc": 0.7676767676767677,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 2.47,
+          "fallback_count": 0
+        }
+      },
+      "mean_f1": 0.8065040650406504,
+      "mean_auroc": 0.7575757575757576,
+      "mean_trials": 2.26
+    },
+    {
+      "lsh_dim": 3,
+      "gamma": 0.75,
+      "encoders": {
+        "google/embeddinggemma-300m": {
+          "threshold": 0.5773502691896258,
+          "precision": 0.5813953488372093,
+          "recall": 1.0,
+          "f1": 0.7352941176470589,
+          "fpr": 0.7272727272727273,
+          "auroc": 0.6363636363636364,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 1.48,
+          "fallback_count": 0
+        },
+        "AbeHou/SemStamp-c4-sbert": {
+          "threshold": 0.5773502691896258,
+          "precision": 0.5847953216374269,
+          "recall": 1.0,
+          "f1": 0.7380073800738007,
+          "fpr": 0.7171717171717171,
+          "auroc": 0.6414141414141414,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 1.45,
+          "fallback_count": 0
+        }
+      },
+      "mean_f1": 0.7366507488604298,
+      "mean_auroc": 0.6388888888888888,
+      "mean_trials": 1.4649999999999999
+    },
+    {
+      "lsh_dim": 4,
+      "gamma": 0.1,
+      "encoders": {
+        "google/embeddinggemma-300m": {
+          "threshold": 2.9999999999999996,
+          "precision": 0.9782608695652174,
+          "recall": 0.9,
+          "f1": 0.9375,
+          "fpr": 0.020202020202020204,
+          "auroc": 0.9398989898989898,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 21.73,
+          "fallback_count": 10
+        },
+        "AbeHou/SemStamp-c4-sbert": {
+          "threshold": 2.9999999999999996,
+          "precision": 0.9294117647058824,
+          "recall": 0.79,
+          "f1": 0.8540540540540541,
+          "fpr": 0.06060606060606061,
+          "auroc": 0.8646969696969697,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 22.85,
+          "fallback_count": 21
+        }
+      },
+      "mean_f1": 0.8957770270270271,
+      "mean_auroc": 0.9022979797979798,
+      "mean_trials": 22.29
+    },
+    {
+      "lsh_dim": 4,
+      "gamma": 0.25,
+      "encoders": {
+        "google/embeddinggemma-300m": {
+          "threshold": 1.7320508075688774,
+          "precision": 0.7936507936507936,
+          "recall": 1.0,
+          "f1": 0.8849557522123894,
+          "fpr": 0.26262626262626265,
+          "auroc": 0.8686868686868687,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 5.04,
+          "fallback_count": 0
+        },
+        "AbeHou/SemStamp-c4-sbert": {
+          "threshold": 1.7320508075688774,
+          "precision": 0.7795275590551181,
+          "recall": 0.99,
+          "f1": 0.8722466960352423,
+          "fpr": 0.2828282828282828,
+          "auroc": 0.8535858585858586,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 5.49,
+          "fallback_count": 1
+        }
+      },
+      "mean_f1": 0.8786012241238159,
+      "mean_auroc": 0.8611363636363636,
+      "mean_trials": 5.265000000000001
+    },
+    {
+      "lsh_dim": 4,
+      "gamma": 0.5,
+      "encoders": {
+        "google/embeddinggemma-300m": {
+          "threshold": 1.0,
+          "precision": 0.6756756756756757,
+          "recall": 1.0,
+          "f1": 0.8064516129032258,
+          "fpr": 0.48484848484848486,
+          "auroc": 0.7575757575757576,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 2.25,
+          "fallback_count": 0
+        },
+        "AbeHou/SemStamp-c4-sbert": {
+          "threshold": 1.0,
+          "precision": 0.6666666666666666,
+          "recall": 1.0,
+          "f1": 0.8,
+          "fpr": 0.5050505050505051,
+          "auroc": 0.7474747474747474,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 2.17,
+          "fallback_count": 0
+        }
+      },
+      "mean_f1": 0.8032258064516129,
+      "mean_auroc": 0.7525252525252525,
+      "mean_trials": 2.21
+    },
+    {
+      "lsh_dim": 4,
+      "gamma": 0.75,
+      "encoders": {
+        "google/embeddinggemma-300m": {
+          "threshold": 0.5773502691896258,
+          "precision": 0.5617977528089888,
+          "recall": 1.0,
+          "f1": 0.7194244604316546,
+          "fpr": 0.7878787878787878,
+          "auroc": 0.6060606060606061,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 1.39,
+          "fallback_count": 0
+        },
+        "AbeHou/SemStamp-c4-sbert": {
+          "threshold": 0.5773502691896258,
+          "precision": 0.5586592178770949,
+          "recall": 1.0,
+          "f1": 0.7168458781362007,
+          "fpr": 0.797979797979798,
+          "auroc": 0.601010101010101,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 1.43,
+          "fallback_count": 0
+        }
+      },
+      "mean_f1": 0.7181351692839277,
+      "mean_auroc": 0.6035353535353536,
+      "mean_trials": 1.41
+    },
+    {
+      "lsh_dim": 5,
+      "gamma": 0.1,
+      "encoders": {
+        "google/embeddinggemma-300m": {
+          "threshold": 2.9999999999999996,
+          "precision": 0.912621359223301,
+          "recall": 0.94,
+          "f1": 0.9261083743842364,
+          "fpr": 0.09090909090909091,
+          "auroc": 0.9245454545454544,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 15.09,
+          "fallback_count": 6
+        },
+        "AbeHou/SemStamp-c4-sbert": {
+          "threshold": 2.9999999999999996,
+          "precision": 0.8796296296296297,
+          "recall": 0.95,
+          "f1": 0.9134615384615384,
+          "fpr": 0.13131313131313133,
+          "auroc": 0.9093434343434345,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 14.52,
+          "fallback_count": 5
+        }
+      },
+      "mean_f1": 0.9197849564228875,
+      "mean_auroc": 0.9169444444444445,
+      "mean_trials": 14.805
+    },
+    {
+      "lsh_dim": 5,
+      "gamma": 0.25,
+      "encoders": {
+        "google/embeddinggemma-300m": {
+          "threshold": 1.7320508075688774,
+          "precision": 0.7751937984496124,
+          "recall": 1.0,
+          "f1": 0.8733624454148472,
+          "fpr": 0.29292929292929293,
+          "auroc": 0.8535353535353536,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 4.79,
+          "fallback_count": 0
+        },
+        "AbeHou/SemStamp-c4-sbert": {
+          "threshold": 1.7320508075688774,
+          "precision": 0.8130081300813008,
+          "recall": 1.0,
+          "f1": 0.8968609865470852,
+          "fpr": 0.23232323232323232,
+          "auroc": 0.8838383838383839,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 5.13,
+          "fallback_count": 0
+        }
+      },
+      "mean_f1": 0.8851117159809663,
+      "mean_auroc": 0.8686868686868687,
+      "mean_trials": 4.96
+    },
+    {
+      "lsh_dim": 5,
+      "gamma": 0.5,
+      "encoders": {
+        "google/embeddinggemma-300m": {
+          "threshold": 1.0,
+          "precision": 0.6896551724137931,
+          "recall": 1.0,
+          "f1": 0.8163265306122449,
+          "fpr": 0.45454545454545453,
+          "auroc": 0.7727272727272727,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 2.17,
+          "fallback_count": 0
+        },
+        "AbeHou/SemStamp-c4-sbert": {
+          "threshold": 1.0,
+          "precision": 0.6993006993006993,
+          "recall": 1.0,
+          "f1": 0.823045267489712,
+          "fpr": 0.43434343434343436,
+          "auroc": 0.7828282828282829,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 2.48,
+          "fallback_count": 0
+        }
+      },
+      "mean_f1": 0.8196858990509784,
+      "mean_auroc": 0.7777777777777778,
+      "mean_trials": 2.325
+    },
+    {
+      "lsh_dim": 5,
+      "gamma": 0.75,
+      "encoders": {
+        "google/embeddinggemma-300m": {
+          "threshold": 0.5773502691896258,
+          "precision": 0.5847953216374269,
+          "recall": 1.0,
+          "f1": 0.7380073800738007,
+          "fpr": 0.7171717171717171,
+          "auroc": 0.6414141414141414,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 1.39,
+          "fallback_count": 0
+        },
+        "AbeHou/SemStamp-c4-sbert": {
+          "threshold": 0.5773502691896258,
+          "precision": 0.5882352941176471,
+          "recall": 1.0,
+          "f1": 0.7407407407407407,
+          "fpr": 0.7070707070707071,
+          "auroc": 0.6464646464646464,
+          "n_pos": 100,
+          "n_neg": 99,
+          "mean_trials": 1.56,
+          "fallback_count": 0
+        }
+      },
+      "mean_f1": 0.7393740604072707,
+      "mean_auroc": 0.6439393939393939,
+      "mean_trials": 1.475
+    }
+  ]
+}

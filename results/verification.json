@@ -1,0 +1,22 @@
+{
+  "kind": "operational_validation",
+  "date": "2026-10-15",
+  "new_scientific_runs": 0,
+  "archive_files": 3547,
+  "archives": 17,
+  "original_file_hashes_match": true,
+  "empty_destination_restored_files": 3547,
+  "second_restore_new_files": 0,
+  "restore_conflict_preflight": "passed",
+  "path_traversal_rejection": "passed",
+  "primary_table_rows_verified": 25,
+  "primary_values_match_tex": true,
+  "cli_help_entries_passed": 11,
+  "python_source_syntax": "passed",
+  "pdfs_compiled_and_visually_inspected": [
+    "docs/baseline_benchmarks.pdf",
+    "docs/codewm_method.pdf"
+  ],
+  "reporting_corrections": "report_corrections.json",
+  "generation_runtime_not_retested": true
+}

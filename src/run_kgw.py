@@ -5,7 +5,7 @@ an unwatermarked baseline, runs z-score detection on both, and saves
 everything to out/kgw/<impl>/. Checkpoints after every batch and resumes from
 an existing output file.
 
-Three-step pattern (CLAUDE.md): dataloader module -> watermark impl (wm/) ->
+Three-step pattern (IMPLEMENTATION.md): dataloader module -> watermark impl (wm/) ->
 global inference helpers (utils).
 
 Implementations:

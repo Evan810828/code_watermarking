@@ -1,5 +1,5 @@
 """Adapters around the authors' ORIGINAL watermark repos. By default the
-clones are expected next to the pilot_study checkout
+clones are expected next to this repository's checkout
 (<parent>/lm-watermarking and <parent>/SemStamp); override the locations with
 the LM_WATERMARKING_DIR / SEMSTAMP_DIR environment variables.
 Import wm.MarkLLM_official.kgw / wm.MarkLLM_official.semstamp; they call add_repo_paths()

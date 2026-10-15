@@ -1,28 +1,73 @@
-# Only data/ and src/ (plus root docs) are tracked.
-# Experiment outputs, logs, and cluster-specific launch scripts stay local.
-/out/
+# Raw run output remains local; the immutable evidence snapshot is in results/.
+/out/*
+!/out/README.md
+!/out/seqmark/
+/out/seqmark/**
+!/out/seqmark/**/
 /logs/
-/archived_old_out/
-/CLAUDE.md
-/src/scripts/
-/docs/
-/diagnosis
+/archive/*
+!/archive/out_round1/
+/archive/out_round1/*
+!/archive/out_round1/README.md
 
-# Large local data (LCB per-task tests, ~4GB; prepped via
-# `python -m dataloader.livecodebench` or relocated with $LCB_SCRATCH)
+# Directly linked report evidence is browsable on GitHub as well as archived.
+!/out/seqmark/diagnostics/verification_20260914T162831Z/verify_boundary.json
+!/out/seqmark/diagnostics/verification_20260914T162831Z/verify_boundary_executed.py
+!/out/seqmark/diagnostics/verification_20260914T162831Z/verify_executed.py
+!/out/seqmark/diagnostics/verification_20260914T162831Z/verify_port.json
+!/out/seqmark/diagnostics/verification_20260914T162831Z/verify_port_sbert.json
+!/out/seqmark/figures/seqmark_roc.pdf
+!/out/seqmark/figures/seqmark_roc.png
+!/out/seqmark/figures/seqmark_roc_points.csv
+!/out/seqmark/figures/seqmark_z_distribution.csv
+!/out/seqmark/figures/seqmark_z_distribution.pdf
+!/out/seqmark/figures/seqmark_z_distribution.png
+!/out/seqmark/humaneval/pass1_seqmark_port_cached_qwen3.5-4b_humaneval.provenance.json
+!/out/seqmark/humaneval/pass1_seqmark_port_sbert_cached_qwen3.5-4b_humaneval.provenance.json
+!/out/seqmark/humaneval/seqmark_humaneval_port_cached_qwen3.5-4b.json
+!/out/seqmark/humaneval/seqmark_humaneval_port_sbert_cached_qwen3.5-4b.json
+!/out/seqmark/mbpp/pass1_seqmark_port_cached_qwen3.5-4b_mbpp.provenance.json
+!/out/seqmark/mbpp/pass1_seqmark_port_sbert_cached_qwen3.5-4b_mbpp.provenance.json
+!/out/seqmark/mbpp/seqmark_mbpp_port_cached_qwen3.5-4b.json
+!/out/seqmark/mbpp/seqmark_mbpp_port_sbert_cached_qwen3.5-4b.json
+!/out/seqmark/runs/20260914T193621Z_fb93ae44/manifest.json
+!/out/seqmark/runs/20260914T212625Z_00db2082/manifest.json
+!/out/seqmark/runs/20260914T214558Z_2b1d6266/manifest.json
+!/out/seqmark/runs/20260914T225231Z_7f449be4/manifest.json
+!/out/seqmark/runs/20260914T225431Z_final_summary/diagnostics.json
+!/out/seqmark/runs/20260914T225431Z_final_summary/manifest.json
+!/out/seqmark/runs/20260914T225431Z_final_summary/metrics.json
+!/out/seqmark/runs/20260914T225431Z_final_summary/verify_executed.py
+!/out/seqmark/runs/20260915T015302Z_roc/manifest.json
+!/out/seqmark/runs/20260915T015302Z_roc/plot_executed.py
+!/out/seqmark/runs/20260915T020154Z_z_distribution/manifest.json
+!/out/seqmark/runs/20260915T020154Z_z_distribution/plot_executed.py
+!/out/seqmark/source_snapshots/1da51e14d30eb34f869936159cd0993a2605241317745f6d0cb5dc77fb03368e/src/eval_pass1.py
+!/out/seqmark/source_snapshots/952a90f4b7f79f76f05f07fb62aeea349b2008ba724fec0e312c683aacb3362d/source_identity.json
+!/out/seqmark/sweep/data_provenance.json
+!/out/seqmark/sweep/selected_config.json
+
+# Large dataset tests, downloaded weights, training checkpoints and local caches.
 /data/lcb
-
-# Python
+*.pt
+*.ckpt
+*.safetensors
+.cache/
+.env
+.env.*
+!.env.example
 __pycache__/
 *.py[cod]
 *.egg-info/
 .venv/
-
-# Editors / OS
+.pytest_cache/
 .vscode/
 .idea/
 .DS_Store
-
-# Checkpoints / large artifacts
-*.pt
-*.ckpt
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz

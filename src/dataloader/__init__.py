@@ -23,8 +23,8 @@ import sys
 from importlib import import_module
 from pathlib import Path
 
-PILOT_DIR = Path(__file__).resolve().parents[2]
-DATA_DIR = PILOT_DIR / "data"
+REPO_DIR = Path(__file__).resolve().parents[2]
+DATA_DIR = REPO_DIR / "data"
 
 DATASETS = ("humaneval", "mbpp", "livecodebench")
 

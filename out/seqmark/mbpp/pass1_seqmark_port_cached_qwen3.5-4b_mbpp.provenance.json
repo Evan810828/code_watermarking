@@ -1,0 +1,16 @@
+{
+  "input": "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/mbpp/seqmark_mbpp_port_cached_qwen3.5-4b.json",
+  "input_sha256": "8c616975a0a2483615958b40292cdb2ef921028e375685b7e502d439ae1b1bcf",
+  "verdict_sha256": "347ed79754e6d523ad4c9c15fe48fadea4b5fe5b7ea1bf32a6bcd7d983220cdc",
+  "command": [
+    "/users/6/wu001810/.conda/envs/watermark/bin/python",
+    "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/src/eval_pass1.py",
+    "--input",
+    "/projects/standard/jusun/shared/wu001810/llm_watermark/ast_watermarking/out/seqmark/mbpp/seqmark_mbpp_port_cached_qwen3.5-4b.json",
+    "--tag",
+    "seqmark_port_cached_qwen3.5-4b",
+    "--workers",
+    "4"
+  ],
+  "finished_at": "2026-09-14T21:26:39.351434+00:00"
+}

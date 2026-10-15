@@ -9,7 +9,7 @@ that SWEET detection re-runs the model to get per-token entropy, so detection
 scores each sample's token ids with their true UNPADDED left context (a
 padded prompt would change early-token entropies).
 
-Three-step pattern (CLAUDE.md): dataloader module -> watermark impl (wm/) ->
+Three-step pattern (IMPLEMENTATION.md): dataloader module -> watermark impl (wm/) ->
 global inference helpers (utils).
 
 Defaults: gamma/z-threshold/entropy-threshold follow the upstream repo's

@@ -1,0 +1,40 @@
+[
+  {
+    "kind": "reporting_correction",
+    "metric": "pass@1_unwatermarked",
+    "dataset": "LiveCodeBench release v1, 400-task test split",
+    "methods": [
+      "SemStamp pilot",
+      "SemStamp official"
+    ],
+    "previous_display": "44.3%",
+    "corrected_display": "43.8%",
+    "recorded_value": 0.4375,
+    "passing_tasks": 175,
+    "total_tasks": 400,
+    "verification": "Both saved SemStamp unwatermarked-control completion cohorts match all 400 KGW pilot unwatermarked completions by task ID and exact completion text.",
+    "raw_artifacts_modified": false,
+    "sources": [
+      {
+        "path": "out/kgw/livecodebench/kgw_livecodebench_pilot_qwen3.5-4b.json",
+        "sha256": "f892cb09e42b0a7a9cb6a902e6248d88bf741b30d48af202f4cd11509b63802d"
+      },
+      {
+        "path": "out/kgw/livecodebench/pass1_kgw_pilot_summary.json",
+        "sha256": "8c605feedf72436d80e57d139c0765ac0564eff668c35b21bf318af158c62ed5"
+      },
+      {
+        "path": "out/kgw/livecodebench/pass1_kgw_pilot_livecodebench.json",
+        "sha256": "f4875e604b76ed803e9cb9efb6273338309145cc522d738751bfb9e3f6e3397a"
+      },
+      {
+        "path": "out/semstamp/livecodebench/semstamp_livecodebench_pilot_qwen3.5-4b.rescored.json",
+        "sha256": "f5714a7a6803d22ef8811008f117dd06ad9f068177e6d5e84a1da24045305e60"
+      },
+      {
+        "path": "out/semstamp/livecodebench/semstamp_livecodebench_official_qwen3.5-4b.rescored.json",
+        "sha256": "542fefdf80279d73ee165453f6d033af97db23239245d640a13581458d6b4ca2"
+      }
+    ]
+  }
+]
